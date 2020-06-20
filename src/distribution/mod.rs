@@ -1,3 +1,5 @@
+pub mod weibull;
+
 pub trait Survival<Input, Output> {
     fn survival(&self, input: Input) -> Output;
 }
