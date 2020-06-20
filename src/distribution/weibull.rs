@@ -20,11 +20,11 @@ impl<F> From<WeibullDistribution<F>> for Vec<F> {
     }
 }
 
-impl<'a, F> From<&'a Vec<F>> for WeibullDistribution<F>
+impl<'a, F> From<&'a [F]> for WeibullDistribution<F>
 where
     F: Copy,
 {
-    fn from(array: &'a Vec<F>) -> Self {
+    fn from(array: &'a [F]) -> Self {
         WeibullDistribution {
             lambda: array[0],
             rho: array[1],

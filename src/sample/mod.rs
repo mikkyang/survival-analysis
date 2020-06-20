@@ -53,7 +53,7 @@ pub struct BaseFitter<S, D, F> {
 impl<'f, S, D, F> ArgminOp for &'f BaseFitter<S, D, F>
 where
     S: LogLikelihood<D, F>,
-    D: for<'a> From<&'a Vec<F>>,
+    D: for<'a> From<&'a [F]>,
     F: Float + FloatConst + FromPrimitive + Debug + Display + Serialize + for<'de> Deserialize<'de>,
 {
     type Param = Vec<F>;
@@ -77,7 +77,7 @@ pub trait Fitter<S, P> {
 impl<S, D> Fitter<S, D> for BaseFitter<S, D, f64>
 where
     S: LogLikelihood<D, f64> + InitialSolvePoint<D>,
-    D: for<'a> From<&'a Vec<f64>> + Into<Vec<f64>> + Debug,
+    D: for<'a> From<&'a [f64]> + Into<Vec<f64>> + Debug,
 {
     fn state(&self) -> &S {
         &self.input_state
