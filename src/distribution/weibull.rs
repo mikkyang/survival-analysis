@@ -9,13 +9,13 @@ pub struct WeibullDistribution<F> {
     pub lambda: F,
 }
 
-impl<S, D, F> LogHazard<ArrayBase<S, D>, Array<F, D>> for WeibullDistribution<F>
+impl<'a, S, D, F> LogHazard<&'a ArrayBase<S, D>, Array<F, D>> for WeibullDistribution<F>
 where
     S: Data<Elem = F>,
     D: Dimension,
     F: Float + ScalarOperand,
 {
-    fn log_hazard(&self, input: ArrayBase<S, D>) -> Array<F, D> {
+    fn log_hazard(&self, input: &'a ArrayBase<S, D>) -> Array<F, D> {
         let WeibullDistribution { rho, lambda } = *self;
 
         // calculate scalars first to avoid applying to entire array
@@ -26,13 +26,13 @@ where
     }
 }
 
-impl<S, D, F> CumulativeHazard<ArrayBase<S, D>, Array<F, D>> for WeibullDistribution<F>
+impl<'a, S, D, F> CumulativeHazard<&'a ArrayBase<S, D>, Array<F, D>> for WeibullDistribution<F>
 where
     S: Data<Elem = F>,
     D: Dimension,
     F: Float + SafeLogExp + ScalarOperand,
 {
-    fn cumulative_hazard(&self, input: ArrayBase<S, D>) -> Array<F, D> {
+    fn cumulative_hazard(&self, input: &'a ArrayBase<S, D>) -> Array<F, D> {
         let WeibullDistribution { rho, lambda } = *self;
 
         let log = (input.mapv(SafeLogExp::safe_ln) - lambda.ln()) * rho;
@@ -55,7 +55,7 @@ mod tests {
             lambda: 1.,
         };
 
-        let actual = distribution.log_hazard(array![1., 2., 3., 4.]);
+        let actual = distribution.log_hazard(&array![1., 2., 3., 4.]);
         let expected = array![-0.69314718, -1.03972077, -1.24245332, -1.38629436];
         assert_diff_within_tolerance!(&actual, &expected, TOLERANCE_F32);
     }
@@ -67,7 +67,7 @@ mod tests {
             lambda: 2.,
         };
 
-        let actual = distribution.log_hazard(array![5., 6., 7., 8.]);
+        let actual = distribution.log_hazard(&array![5., 6., 7., 8.]);
         let expected = array![0.17046329, 0.26162407, 0.33869941, 0.40546511];
         assert_diff_within_tolerance!(&actual, &expected, TOLERANCE_F64);
     }
@@ -79,7 +79,7 @@ mod tests {
             lambda: 1.4,
         };
 
-        let actual = distribution.cumulative_hazard(array![[5., 6.], [7., 8.]]);
+        let actual = distribution.cumulative_hazard(&array![[5., 6.], [7., 8.]]);
         let expected = array![[12.75510204, 18.36734694,], [25., 32.65306122,]];
         assert_diff_within_tolerance!(&actual, &expected, TOLERANCE_F64);
     }
