@@ -11,6 +11,35 @@ pub trait InitialSolvePoint<T> {
     fn initial_solve_point(&self) -> T;
 }
 
+pub trait InitialNelderMeanSimplex<T> {
+    fn initial_simplex(&self) -> Vec<T>;
+}
+
+const NON_ZERO_DELTA: f64 = 0.05;
+const ZERO_DELTA: f64 = 0.00025;
+
+impl<F> InitialNelderMeanSimplex<Vec<F>> for [F]
+where
+    F: Float + FromPrimitive,
+{
+    fn initial_simplex(&self) -> Vec<Vec<F>> {
+        let initial_point: Vec<F> = self.into();
+
+        let d = initial_point.len();
+        let mut simplex = vec![initial_point; d + 1];
+        for (index_within_point, point) in simplex.iter_mut().skip(1).enumerate() {
+            if point[index_within_point] != F::zero() {
+                point[index_within_point] =
+                    F::from(1.0 + NON_ZERO_DELTA).unwrap() * point[index_within_point]
+            } else {
+                point[index_within_point] = F::from(ZERO_DELTA).unwrap()
+            }
+        }
+
+        simplex
+    }
+}
+
 pub trait LogLikelihood<Distribution, F> {
     fn log_likelihood(&self, distribution: &Distribution) -> F;
 }
@@ -45,9 +74,6 @@ pub trait Fitter<S, P> {
     fn fit(&self) -> Result<P, String>;
 }
 
-const NON_ZERO_DELTA: f64 = 0.05;
-const ZERO_DELTA: f64 = 0.00025;
-
 impl<S, D> Fitter<S, D> for BaseFitter<S, D, f64>
 where
     S: LogLikelihood<D, f64> + InitialSolvePoint<D>,
@@ -60,17 +86,7 @@ where
     fn fit(&self) -> Result<D, String> {
         let initial_point: Vec<f64> = self.input_state.initial_solve_point().into();
 
-        let d = initial_point.len();
-        let mut simplex = vec![initial_point; d + 1];
-        for (index_within_point, point) in simplex.iter_mut().skip(1).enumerate() {
-            if point[index_within_point] != 0.0 {
-                point[index_within_point] = (1.0 + NON_ZERO_DELTA) * point[index_within_point]
-            } else {
-                point[index_within_point] = ZERO_DELTA
-            }
-        }
-
-        let solver = NelderMead::new().with_initial_params(simplex);
+        let solver = NelderMead::new().with_initial_params(initial_point.initial_simplex());
 
         let res = Executor::new(self, solver, vec![])
             .add_observer(ArgminSlogLogger::term(), ObserverMode::Always)
