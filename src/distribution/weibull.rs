@@ -24,3 +24,36 @@ where
         array + scalar
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ndarray::prelude::*;
+
+    const TOLERANCE_F32: f32 = 1e-5;
+    const TOLERANCE_F64: f64 = 1e-5;
+
+    #[test]
+    fn log_hazard_f32() {
+        let distribution = WeibullDistribution {
+            rho: 0.5f32,
+            lambda: 1.,
+        };
+
+        let actual = distribution.log_hazard(array![1., 2., 3., 4.]);
+        let expected = array![-0.69314718, -1.03972077, -1.24245332, -1.38629436];
+        assert_diff_within_tolerance!(&actual, &expected, TOLERANCE_F32);
+    }
+
+    #[test]
+    fn log_hazard_f64() {
+        let distribution = WeibullDistribution {
+            rho: 1.5f64,
+            lambda: 2.,
+        };
+
+        let actual = distribution.log_hazard(array![5., 6., 7., 8.]);
+        let expected = array![0.17046329, 0.26162407, 0.33869941, 0.40546511];
+        assert_diff_within_tolerance!(&actual, &expected, TOLERANCE_F64);
+    }
+}
