@@ -81,7 +81,7 @@ where
     F: Float + SafeLogExp + ScalarOperand + Neg + Sub<Array<F, D>, Output = Array<F, D>>,
 {
     fn log_cumulative_density(&self, input: &ArrayBase<S, D>) -> Array<F, D> {
-        (F::one() - self.survival(input)).mapv_into(|x| x.ln())
+        (F::one() - self.survival(input)).mapv_into(F::ln)
     }
 }
 
