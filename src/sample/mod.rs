@@ -50,7 +50,7 @@ const ZERO_DELTA: f64 = 0.00025;
 
 impl<S, D> Fitter<S, D> for BaseFitter<S, D, f64>
 where
-    S: LogLikelihood<D, f64> + InitialSolvePoint<Option<D>>,
+    S: LogLikelihood<D, f64> + InitialSolvePoint<D>,
     D: for<'a> From<&'a Vec<f64>> + Into<Vec<f64>> + Debug,
 {
     fn state(&self) -> &S {
@@ -58,11 +58,7 @@ where
     }
 
     fn fit(&self) -> Result<D, String> {
-        let initial_point: Vec<f64> = if let Some(x) = self.input_state.initial_solve_point() {
-            x.into()
-        } else {
-            vec![]
-        };
+        let initial_point: Vec<f64> = self.input_state.initial_solve_point().into();
 
         let d = initial_point.len();
         let mut simplex = vec![initial_point; d + 1];
@@ -91,6 +87,7 @@ mod tests {
     use super::univariate::{Events, IntervalCensoredDuration};
     use super::*;
     use crate::distribution::weibull::WeibullDistribution;
+    use ndarray::prelude::*;
 
     const TOLERANCE: f64 = 1e-5;
 

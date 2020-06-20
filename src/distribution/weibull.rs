@@ -1,6 +1,6 @@
 use super::{CumulativeHazard, LogCumulativeDensity, LogHazard, Survival};
 use crate::sample::univariate::{
-    Events, IntervalCensoredDuration, LeftCensoredDuration, RightCensoredDuration,
+    IntervalCensoredDuration, LeftCensoredDuration, RightCensoredDuration,
 };
 use crate::sample::InitialSolvePoint;
 use crate::utils::SafeLogExp;
@@ -85,55 +85,53 @@ where
     }
 }
 
-impl<S, F, A, B, C> InitialSolvePoint<Option<WeibullDistribution<F>>>
-    for Events<RightCensoredDuration<S, F>, A, B, C>
+impl<S, F> InitialSolvePoint<WeibullDistribution<F>> for RightCensoredDuration<S, F>
 where
     S: Data<Elem = F>,
     F: Float + FromPrimitive,
 {
-    fn initial_solve_point(&self) -> Option<WeibullDistribution<F>> {
-        self.time.duration.mean().map(|lambda| WeibullDistribution {
+    fn initial_solve_point(&self) -> WeibullDistribution<F> {
+        let lambda = self.duration.mean().unwrap_or_else(F::zero);
+        WeibullDistribution {
             rho: F::one(),
             lambda,
-        })
+        }
     }
 }
 
-impl<S, F, A, B, C> InitialSolvePoint<Option<WeibullDistribution<F>>>
-    for Events<LeftCensoredDuration<S, F>, A, B, C>
+impl<S, F> InitialSolvePoint<WeibullDistribution<F>> for LeftCensoredDuration<S, F>
 where
     S: Data<Elem = F>,
     F: Float + FromPrimitive,
 {
-    fn initial_solve_point(&self) -> Option<WeibullDistribution<F>> {
-        self.time.duration.mean().map(|lambda| WeibullDistribution {
+    fn initial_solve_point(&self) -> WeibullDistribution<F> {
+        let lambda = self.duration.mean().unwrap_or_else(F::zero);
+        WeibullDistribution {
             rho: F::one(),
             lambda,
-        })
+        }
     }
 }
 
-impl<S, F, A, B, C> InitialSolvePoint<Option<WeibullDistribution<F>>>
-    for Events<IntervalCensoredDuration<S, F>, A, B, C>
+impl<S, F> InitialSolvePoint<WeibullDistribution<F>> for IntervalCensoredDuration<S, F>
 where
     S: Data<Elem = F>,
     F: Float + FromPrimitive,
 {
-    fn initial_solve_point(&self) -> Option<WeibullDistribution<F>> {
-        self.time
-            .start_time
-            .mean()
-            .map(|lambda| WeibullDistribution {
-                rho: F::one(),
-                lambda,
-            })
+    fn initial_solve_point(&self) -> WeibullDistribution<F> {
+        let lambda = self.start_time.mean().unwrap_or_else(F::zero);
+        WeibullDistribution {
+            rho: F::one(),
+            lambda,
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sample::*;
+    use crate::sample::univariate::*;
+    use crate::sample::LogLikelihood;
     use ndarray::prelude::*;
 
     const TOLERANCE_F32: f32 = 1e-5;

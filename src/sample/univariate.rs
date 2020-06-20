@@ -1,4 +1,4 @@
-use super::LogLikelihood;
+use super::{InitialSolvePoint, LogLikelihood};
 use crate::distribution::{CumulativeHazard, LogCumulativeDensity, LogHazard, Survival};
 use crate::utils::{filter, partition};
 use ndarray::prelude::*;
@@ -33,6 +33,15 @@ where
 {
     pub start_time: ArrayBase<T, Ix1>,
     pub stop_time: ArrayBase<T, Ix1>,
+}
+
+impl<T, D, A, B, C> InitialSolvePoint<D> for Events<T, A, B, C>
+where
+    T: InitialSolvePoint<D>,
+{
+    fn initial_solve_point(&self) -> D {
+        self.time.initial_solve_point()
+    }
 }
 
 impl<D, F, T> LogLikelihood<D, F> for Events<RightCensoredDuration<T, F>, (), (), ()>
