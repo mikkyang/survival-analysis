@@ -161,7 +161,9 @@ where
         let observed_log_cumulative_density = filter(&log_cumulative_density, observed);
 
         let n = F::from_usize(duration.len()).unwrap();
-        ((observed_log_hazard - observed_cumulative_hazard - observed_log_cumulative_density).sum()
+        (observed_log_hazard.sum()
+            - observed_cumulative_hazard.sum()
+            - observed_log_cumulative_density.sum()
             + log_cumulative_density.sum())
             / n
     }
