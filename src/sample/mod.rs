@@ -1,11 +1,16 @@
 use argmin::prelude::*;
 use argmin::solver::neldermead::NelderMead;
+use ndarray::{ArrayBase, Data};
 use num_traits::{Float, FloatConst, FromPrimitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 
 pub mod univariate;
+
+pub struct Uncensored<T, F, D>(ArrayBase<T, D>)
+where
+    T: Data<Elem = F>;
 
 pub trait InitialSolvePoint<T> {
     fn initial_solve_point(&self) -> T;

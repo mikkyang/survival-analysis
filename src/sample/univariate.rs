@@ -1,4 +1,4 @@
-use super::{InitialSolvePoint, LogLikelihood};
+use super::{InitialSolvePoint, LogLikelihood, Uncensored};
 use crate::distribution::{CumulativeHazard, LogCumulativeDensity, LogHazard, Survival};
 use crate::utils::{filter, partition};
 use ndarray::prelude::*;
@@ -44,7 +44,7 @@ where
     }
 }
 
-impl<D, F, T> LogLikelihood<D, F> for Events<RightCensoredDuration<T, F>, (), (), ()>
+impl<D, F, T> LogLikelihood<D, F> for Events<Uncensored<T, F, Ix1>, (), (), ()>
 where
     D: LogHazard<ArrayBase<T, Ix1>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
     F: Float + FromPrimitive,
@@ -52,14 +52,14 @@ where
 {
     fn log_likelihood(&self, distribution: &D) -> F {
         let Events {
-            time: RightCensoredDuration { duration },
+            time: Uncensored(time),
             ..
         } = self;
 
-        let log_hazard = distribution.log_hazard(duration);
-        let cumulative_hazard = distribution.cumulative_hazard(duration);
+        let log_hazard = distribution.log_hazard(time);
+        let cumulative_hazard = distribution.cumulative_hazard(time);
 
-        let n = F::from_usize(duration.len()).unwrap();
+        let n = F::from_usize(time.len()).unwrap();
         (log_hazard.sum() - cumulative_hazard.sum()) / n
     }
 }
@@ -112,27 +112,6 @@ where
         let observed_weight = filter(&weight, &observed);
 
         ((observed_weight * log_hazard).sum() - (weight * &cumulative_hazard).sum()) / weight.sum()
-    }
-}
-
-impl<D, F, T> LogLikelihood<D, F> for Events<LeftCensoredDuration<T, F>, (), (), ()>
-where
-    D: for<'a> LogHazard<&'a ArrayBase<T, Ix1>, Array1<F>>
-        + for<'a> CumulativeHazard<&'a ArrayBase<T, Ix1>, Array1<F>>,
-    F: Float + FromPrimitive,
-    T: Data<Elem = F>,
-{
-    fn log_likelihood(&self, distribution: &D) -> F {
-        let Events {
-            time: LeftCensoredDuration { duration },
-            ..
-        } = self;
-
-        let log_hazard = distribution.log_hazard(&duration);
-        let cumulative_hazard = distribution.cumulative_hazard(&duration);
-
-        let n = F::from_usize(duration.len()).unwrap();
-        (log_hazard - cumulative_hazard).sum() / n
     }
 }
 
@@ -202,38 +181,6 @@ where
                 - &observed_cumulative_hazard
                 - &observed_log_cumulative_density);
         all.sum() + (weight * &log_cumulative_density).sum()
-    }
-}
-
-impl<D, F, T> LogLikelihood<D, F> for Events<IntervalCensoredDuration<T, F>, (), (), ()>
-where
-    D: LogHazard<ArrayBase<T, Ix1>, Array1<F>>
-        + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>
-        + Survival<ArrayBase<T, Ix1>, Array1<F>>,
-    F: Float + FromPrimitive,
-    T: Data<Elem = F>,
-{
-    fn log_likelihood(&self, distribution: &D) -> F {
-        let Events {
-            time:
-                IntervalCensoredDuration {
-                    start_time,
-                    stop_time,
-                },
-            ..
-        } = self;
-
-        let min = F::from_f64(-1e50).unwrap();
-        let max = F::from_f64(1e50).unwrap();
-
-        let log_hazard = distribution.log_hazard(&stop_time);
-        let cumulative_hazard = distribution.cumulative_hazard(&stop_time);
-        let survival = (distribution.survival(&start_time) - distribution.survival(&stop_time))
-            .mapv_into(F::ln)
-            .mapv_into(|x| clamp(x, min, max));
-
-        let n = F::from_usize(start_time.len()).unwrap();
-        (log_hazard.sum() - cumulative_hazard.sum() + survival.sum()) / n
     }
 }
 
