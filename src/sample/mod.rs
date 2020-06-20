@@ -1,6 +1,5 @@
 use argmin::prelude::*;
 use argmin::solver::neldermead::NelderMead;
-use ndarray::prelude::*;
 use num_traits::{Float, FloatConst, FromPrimitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
@@ -30,7 +29,7 @@ where
 {
     type Param = Vec<F>;
     type Output = F;
-    type Hessian = Array2<F>;
+    type Hessian = ();
     type Jacobian = ();
     type Float = F;
 
