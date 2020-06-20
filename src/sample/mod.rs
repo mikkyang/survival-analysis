@@ -69,8 +69,6 @@ where
 }
 
 pub trait Fitter<S, P> {
-    fn state(&self) -> &S;
-
     fn fit(&self) -> Result<P, String>;
 }
 
@@ -79,10 +77,6 @@ where
     S: LogLikelihood<D, f64> + InitialSolvePoint<D>,
     D: for<'a> From<&'a [f64]> + Into<Vec<f64>> + Debug,
 {
-    fn state(&self) -> &S {
-        &self.input_state
-    }
-
     fn fit(&self) -> Result<D, String> {
         let initial_point: Vec<f64> = self.input_state.initial_solve_point().into();
 
