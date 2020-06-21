@@ -8,11 +8,11 @@ use std::marker::PhantomData;
 
 pub mod univariate;
 
-pub struct Uncensored<T, F, D>(ArrayBase<T, D>)
+pub struct Uncensored<T, F, D>(pub ArrayBase<T, D>)
 where
     T: Data<Elem = F>;
 
-pub struct LeftCensored<T, F, D>(ArrayBase<T, D>)
+pub struct LeftCensored<T, F, D>(pub ArrayBase<T, D>)
 where
     T: Data<Elem = F>;
 
