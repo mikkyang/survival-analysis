@@ -85,12 +85,6 @@ where
         }
     }
 }
-pub struct RightCensoredDuration<T, F>
-where
-    T: Data<Elem = F>,
-{
-    pub duration: ArrayBase<T, Ix1>,
-}
 
 impl<F> From<Vec<F>> for RightCensored<OwnedRepr<F>, F, Ix1> {
     fn from(vec: Vec<F>) -> Self {
@@ -98,25 +92,10 @@ impl<F> From<Vec<F>> for RightCensored<OwnedRepr<F>, F, Ix1> {
     }
 }
 
-pub struct LeftCensoredDuration<T, F>
-where
-    T: Data<Elem = F>,
-{
-    pub duration: ArrayBase<T, Ix1>,
-}
-
 impl<F> From<Vec<F>> for LeftCensored<OwnedRepr<F>, F, Ix1> {
     fn from(vec: Vec<F>) -> Self {
         LeftCensored(Array::from(vec))
     }
-}
-
-pub struct IntervalCensoredDuration<T, F>
-where
-    T: Data<Elem = F>,
-{
-    pub start_time: ArrayBase<T, Ix1>,
-    pub stop_time: ArrayBase<T, Ix1>,
 }
 
 impl<F> From<Vec<(F, F)>> for IntervalCensored<OwnedRepr<F>, F, Ix1> {
