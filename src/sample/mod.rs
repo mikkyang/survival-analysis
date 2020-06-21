@@ -8,6 +8,14 @@ use std::marker::PhantomData;
 
 pub mod univariate;
 
+pub struct PartiallyObserved<T, F, D, C>
+where
+    T: Data<Elem = F>,
+{
+    pub observed: Uncensored<T, F, D>,
+    pub censored: C,
+}
+
 pub struct Uncensored<T, F, D>(pub ArrayBase<T, D>)
 where
     T: Data<Elem = F>;
@@ -32,8 +40,8 @@ pub struct Weighted<T, W, F, D>
 where
     W: Data<Elem = F>,
 {
-    time: T,
-    weight: ArrayBase<W, D>,
+    pub time: T,
+    pub weight: ArrayBase<W, D>,
 }
 
 pub trait InitialSolvePoint<T> {

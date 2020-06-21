@@ -131,8 +131,9 @@ where
 mod tests {
     use super::*;
     use crate::sample::univariate::*;
-    use crate::sample::LogLikelihood;
+    use crate::sample::*;
     use ndarray::prelude::*;
+    use ndarray::OwnedRepr;
 
     const TOLERANCE_F32: f32 = 1e-5;
     const TOLERANCE_F64: f64 = 1e-5;
@@ -182,14 +183,8 @@ mod tests {
 
         let durations = array![1., 2., 3., 4.];
 
-        let events = Events {
-            time: RightCensoredDuration {
-                duration: durations.view(),
-            },
-            observed: array![true, false, true, false],
-            weight: (),
-            truncation: (),
-        };
+        let events: PartiallyObserved<_, _, _, RightCensored<_, _, _>> =
+            PartiallyObserved::from_events(&durations.view(), &array![true, false, true, false]);
 
         let actual = events.log_likelihood(&distribution);
         let expected = -5.949540344836688;
@@ -204,14 +199,11 @@ mod tests {
             lambda: 0.5,
         };
 
-        let events = Events {
-            time: LeftCensoredDuration {
-                duration: array![1., 2., 3., 4.],
-            },
-            observed: array![true, false, true, false],
-            weight: (),
-            truncation: (),
-        };
+        let events: PartiallyObserved<_, _, _, LeftCensored<_, _, _>> =
+            PartiallyObserved::from_events(
+                &array![1., 2., 3., 4.],
+                &array![true, false, true, false],
+            );
 
         let actual = events.log_likelihood(&distribution);
         let expected = -5.290127712264656;
@@ -226,15 +218,11 @@ mod tests {
             lambda: 0.5,
         };
 
-        let events = Events {
-            time: IntervalCensoredDuration {
-                start_time: array![1., 2., 3., 4., 5.],
-                stop_time: array![5., 6., 7., 8., 9.],
-            },
-            observed: array![true, false, true, false, true],
-            weight: (),
-            truncation: (),
-        };
+        let events: PartiallyObserved<OwnedRepr<_>, _, _, IntervalCensored<_, _, _>> =
+            PartiallyObserved::from_events(
+                &array![(1., 5.), (2., 6.), (3., 7.), (4., 8.), (5., 9.)],
+                &array![true, false, true, false, true],
+            );
 
         let actual = events.log_likelihood(&distribution);
         let expected = -310.7517121011837;
@@ -249,17 +237,15 @@ mod tests {
             lambda: 2.0410538960706726,
         };
 
-        let events = Events {
-            time: IntervalCensoredDuration {
-                start_time: array![0., 2., 5., 10.],
-                stop_time: array![2., 5., 10., 1e10f64],
+        let events = Weighted {
+            time: IntervalCensored {
+                start: array![0., 2., 5., 10.],
+                stop: array![2., 5., 10., 1e10],
             },
-            observed: Array::from_elem((4,), false),
             weight: array![1000. - 376., 376. - 82., 82. - 7., 7.],
-            truncation: (),
         };
 
-        let actual = events.log_likelihood(&distribution);
+        let actual: f64 = events.log_likelihood(&distribution);
         let expected = -0.8832316840607934;
 
         assert!((actual - expected).abs() < TOLERANCE_F64);
