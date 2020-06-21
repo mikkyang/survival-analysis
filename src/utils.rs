@@ -43,28 +43,3 @@ where
         .filter_map(|(x, keep)| if *keep { Some(*x) } else { None });
     Array::from_iter(iter)
 }
-
-pub fn partition<A, S, B, D>(
-    target: &ArrayBase<S, D>,
-    predicate: &ArrayBase<B, D>,
-) -> (Array1<A>, Array1<A>)
-where
-    A: Copy,
-    S: Data<Elem = A>,
-    B: Data<Elem = bool>,
-    D: Dimension,
-{
-    let half_capacity = target.len() / 2;
-    let mut is_true = Vec::with_capacity(half_capacity);
-    let mut is_false = Vec::with_capacity(half_capacity);
-
-    for (x, pred) in target.iter().zip(predicate.iter()) {
-        if *pred {
-            is_true.push(*x)
-        } else {
-            is_false.push(*x)
-        }
-    }
-
-    (Array::from(is_true), Array::from(is_false))
-}

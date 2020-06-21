@@ -1,20 +1,13 @@
 use super::{
-    InitialSolvePoint, IntervalCensored, LeftCensored, LogLikelihood, PartiallyObserved,
-    RightCensored, Uncensored, Weighted,
+    IntervalCensored, LeftCensored, LogLikelihood, PartiallyObserved, RightCensored, Uncensored,
+    Weighted,
 };
 use crate::distribution::{CumulativeHazard, LogCumulativeDensity, LogHazard, Survival};
-use crate::utils::{filter, partition};
+use crate::utils::filter;
 use ndarray::prelude::*;
 use ndarray::{Data, OwnedRepr, ScalarOperand};
 use num_traits::{clamp, Float, FromPrimitive};
 use std::iter::FromIterator;
-
-pub struct Events<Censoring, Observation, Weight, Truncation> {
-    pub time: Censoring,
-    pub observed: Observation,
-    pub weight: Weight,
-    pub truncation: Truncation,
-}
 
 pub trait FromEvents<F> {
     fn from_events<S: Data<Elem = F>, B: Data<Elem = bool>>(
@@ -130,15 +123,6 @@ impl<F> From<Vec<(F, F)>> for IntervalCensored<OwnedRepr<F>, F, Ix1> {
     }
 }
 
-impl<T, D, A, B, C> InitialSolvePoint<D> for Events<T, A, B, C>
-where
-    T: InitialSolvePoint<D>,
-{
-    fn initial_solve_point(&self) -> D {
-        self.time.initial_solve_point()
-    }
-}
-
 impl<D, F, T> LogLikelihood<D, F> for Uncensored<T, F, Ix1>
 where
     D: LogHazard<ArrayBase<T, Ix1>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
@@ -238,55 +222,6 @@ where
     }
 }
 
-impl<D, F, T, B> LogLikelihood<D, F>
-    for Events<RightCensoredDuration<T, F>, ArrayBase<B, Ix1>, (), ()>
-where
-    D: LogHazard<Array1<F>, Array1<F>> + CumulativeHazard<Array1<F>, Array1<F>>,
-    F: Float,
-    T: Data<Elem = F>,
-    B: Data<Elem = bool>,
-{
-    fn log_likelihood(&self, distribution: &D) -> F {
-        let Events {
-            time: RightCensoredDuration { duration },
-            observed,
-            ..
-        } = self;
-
-        let (observed, censored) = partition(&duration, &observed);
-
-        let f: F = Uncensored(observed).log_likelihood(distribution);
-        f + RightCensored(censored).log_likelihood(distribution)
-    }
-}
-
-impl<D, F, T, B, W> LogLikelihood<D, F>
-    for Events<RightCensoredDuration<T, F>, ArrayBase<B, Ix1>, ArrayBase<W, Ix1>, ()>
-where
-    D: LogHazard<Array1<F>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
-    F: Float,
-    T: Data<Elem = F>,
-    W: Data<Elem = F>,
-    B: Data<Elem = bool>,
-{
-    fn log_likelihood(&self, distribution: &D) -> F {
-        let Events {
-            time: RightCensoredDuration { duration },
-            observed,
-            weight,
-            ..
-        } = self;
-
-        let observed_durations = filter(&duration, &observed);
-        let log_hazard = distribution.log_hazard(&observed_durations);
-        let cumulative_hazard = distribution.cumulative_hazard(&duration);
-
-        let observed_weight = filter(&weight, &observed);
-
-        ((observed_weight * log_hazard).sum() - (weight * &cumulative_hazard).sum()) / weight.sum()
-    }
-}
-
 impl<D, F, T> LogLikelihood<D, F> for LeftCensored<T, F, Ix1>
 where
     D: LogCumulativeDensity<ArrayBase<T, Ix1>, Array1<F>>,
@@ -308,66 +243,6 @@ where
     fn log_likelihood(&self, distribution: &D) -> Array1<F> {
         let LeftCensored(time) = self;
         distribution.log_cumulative_density(&time)
-    }
-}
-
-impl<D, F, T, B> LogLikelihood<D, F>
-    for Events<LeftCensoredDuration<T, F>, ArrayBase<B, Ix1>, (), ()>
-where
-    D: LogHazard<Array1<F>, Array1<F>>
-        + CumulativeHazard<Array1<F>, Array1<F>>
-        + LogCumulativeDensity<Array1<F>, Array1<F>>,
-    F: Float,
-    T: Data<Elem = F>,
-    B: Data<Elem = bool>,
-{
-    fn log_likelihood(&self, distribution: &D) -> F {
-        let Events {
-            time: LeftCensoredDuration { duration },
-            observed,
-            ..
-        } = self;
-
-        let (observed_duration, censored_duration) = partition(duration, observed);
-        let uncensored: F = Uncensored(observed_duration).log_likelihood(distribution);
-        uncensored + LeftCensored(censored_duration).log_likelihood(distribution)
-    }
-}
-
-impl<D, F, T, B, W> LogLikelihood<D, F>
-    for Events<LeftCensoredDuration<T, F>, ArrayBase<B, Ix1>, ArrayBase<W, Ix1>, ()>
-where
-    D: LogHazard<Array1<F>, Array1<F>>
-        + CumulativeHazard<Array1<F>, Array1<F>>
-        + LogCumulativeDensity<Array1<F>, Array1<F>>,
-    F: Float + ScalarOperand,
-    T: Data<Elem = F>,
-    W: Data<Elem = F>,
-    B: Data<Elem = bool>,
-{
-    fn log_likelihood(&self, distribution: &D) -> F {
-        let Events {
-            time: LeftCensoredDuration { duration },
-            observed,
-            weight,
-            ..
-        } = self;
-
-        let (observed_duration, censored_duration) = partition(duration, observed);
-        let (observed_weight, censored_weight) = partition(weight, observed);
-
-        let observed: Array1<F> = Weighted {
-            time: Uncensored(observed_duration),
-            weight: observed_weight,
-        }
-        .log_likelihood(distribution);
-        let censored: Array1<F> = Weighted {
-            time: LeftCensored(censored_duration),
-            weight: censored_weight,
-        }
-        .log_likelihood(distribution);
-
-        (observed.sum() + censored.sum()) / weight.sum()
     }
 }
 
@@ -408,82 +283,6 @@ where
             .mapv_into(|x| clamp(x, min, max));
 
         survival
-    }
-}
-
-impl<D, F, T, B> LogLikelihood<D, F>
-    for Events<IntervalCensoredDuration<T, F>, ArrayBase<B, Ix1>, (), ()>
-where
-    D: LogHazard<Array1<F>, Array1<F>>
-        + CumulativeHazard<Array1<F>, Array1<F>>
-        + Survival<Array1<F>, Array1<F>>,
-    F: Float + FromPrimitive,
-    T: Data<Elem = F>,
-    B: Data<Elem = bool>,
-{
-    fn log_likelihood(&self, distribution: &D) -> F {
-        let Events {
-            time:
-                IntervalCensoredDuration {
-                    start_time,
-                    stop_time,
-                },
-            observed,
-            ..
-        } = self;
-        let censored_starts = filter(start_time, &!observed);
-        let (observed_stops, censored_stops) = partition(stop_time, observed);
-
-        let f: F = Uncensored(observed_stops).log_likelihood(distribution);
-        f + IntervalCensored {
-            start: censored_starts,
-            stop: censored_stops,
-        }
-        .log_likelihood(distribution)
-    }
-}
-
-impl<D, F, T, B, W> LogLikelihood<D, F>
-    for Events<IntervalCensoredDuration<T, F>, ArrayBase<B, Ix1>, ArrayBase<W, Ix1>, ()>
-where
-    D: LogHazard<Array1<F>, Array1<F>>
-        + CumulativeHazard<Array1<F>, Array1<F>>
-        + Survival<Array1<F>, Array1<F>>,
-    F: Float + FromPrimitive + ScalarOperand,
-    T: Data<Elem = F>,
-    W: Data<Elem = F>,
-    B: Data<Elem = bool>,
-{
-    fn log_likelihood(&self, distribution: &D) -> F {
-        let Events {
-            time:
-                IntervalCensoredDuration {
-                    start_time,
-                    stop_time,
-                },
-            observed,
-            weight,
-            ..
-        } = self;
-        let (observed_weight, censored_weight) = partition(&weight, &observed);
-        let censored_start = filter(start_time, &!observed);
-        let (observed_duration, censored_stop) = partition(stop_time, observed);
-
-        let observed: Array1<F> = Weighted {
-            time: Uncensored(observed_duration),
-            weight: observed_weight,
-        }
-        .log_likelihood(distribution);
-        let censored: Array1<F> = Weighted {
-            time: IntervalCensored {
-                start: censored_start,
-                stop: censored_stop,
-            },
-            weight: censored_weight,
-        }
-        .log_likelihood(distribution);
-
-        (observed.sum() + censored.sum()) / weight.sum()
     }
 }
 
