@@ -1,4 +1,4 @@
-use super::{InitialSolvePoint, LeftCensored, LogLikelihood, Uncensored};
+use super::{InitialSolvePoint, LeftCensored, LogLikelihood, Uncensored, Weighted};
 use crate::distribution::{CumulativeHazard, LogCumulativeDensity, LogHazard, Survival};
 use crate::utils::{filter, partition};
 use ndarray::prelude::*;
@@ -73,6 +73,20 @@ where
         let cumulative_hazard = distribution.cumulative_hazard(time);
 
         log_hazard - cumulative_hazard
+    }
+}
+
+impl<D, F, T, W> LogLikelihood<D, Array1<F>> for Weighted<T, W, F, Ix1>
+where
+    T: LogLikelihood<D, Array1<F>>,
+    F: Float,
+    W: Data<Elem = F>,
+{
+    fn log_likelihood(&self, distribution: &D) -> Array1<F> {
+        let Weighted { time, weight } = self;
+
+        let log_likelihood = time.log_likelihood(distribution);
+        weight * &log_likelihood
     }
 }
 
@@ -193,16 +207,20 @@ where
         } = self;
 
         let (observed_duration, censored_duration) = partition(duration, observed);
-        let observed_log_hazard = distribution.log_hazard(&observed_duration);
-        let observed_cumulative_hazard = distribution.cumulative_hazard(&observed_duration);
-
-        let censored_log_cumulative_density =
-            distribution.log_cumulative_density(&censored_duration);
-
         let (observed_weight, censored_weight) = partition(weight, observed);
 
-        (observed_weight * (&observed_log_hazard - &observed_cumulative_hazard)).sum()
-            + (censored_weight * &censored_log_cumulative_density).sum()
+        let observed = Weighted {
+            time: Uncensored(observed_duration),
+            weight: observed_weight,
+        }
+        .log_likelihood(distribution);
+        let censored = Weighted {
+            time: LeftCensored(censored_duration),
+            weight: censored_weight,
+        }
+        .log_likelihood(distribution);
+
+        (observed + censored).sum() / weight.sum()
     }
 }
 

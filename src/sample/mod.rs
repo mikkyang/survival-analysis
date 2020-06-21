@@ -16,6 +16,14 @@ pub struct LeftCensored<T, F, D>(ArrayBase<T, D>)
 where
     T: Data<Elem = F>;
 
+pub struct Weighted<T, W, F, D>
+where
+    W: Data<Elem = F>,
+{
+    time: T,
+    weight: ArrayBase<W, D>,
+}
+
 pub trait InitialSolvePoint<T> {
     fn initial_solve_point(&self) -> T;
 }
