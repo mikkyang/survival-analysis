@@ -1,10 +1,8 @@
 use super::{CumulativeHazard, LogCumulativeDensity, LogHazard, Survival};
-use crate::sample::univariate::{
-    IntervalCensoredDuration, LeftCensoredDuration, RightCensoredDuration,
-};
 use crate::sample::InitialSolvePoint;
+use crate::sample::{IntervalCensored, LeftCensored, RightCensored};
 use crate::utils::SafeLogExp;
-use ndarray::{Array, ArrayBase, Data, Dimension, ScalarOperand};
+use ndarray::{Array, ArrayBase, Data, Dimension, Ix1, ScalarOperand};
 use num_traits::{Float, FromPrimitive};
 use std::ops::{Neg, Sub};
 
@@ -85,13 +83,13 @@ where
     }
 }
 
-impl<S, F> InitialSolvePoint<WeibullDistribution<F>> for RightCensoredDuration<S, F>
+impl<S, F> InitialSolvePoint<WeibullDistribution<F>> for RightCensored<S, F, Ix1>
 where
     S: Data<Elem = F>,
     F: Float + FromPrimitive,
 {
     fn initial_solve_point(&self) -> WeibullDistribution<F> {
-        let lambda = self.duration.mean().unwrap_or_else(F::zero);
+        let lambda = self.0.mean().unwrap_or_else(F::zero);
         WeibullDistribution {
             rho: F::one(),
             lambda,
@@ -99,13 +97,13 @@ where
     }
 }
 
-impl<S, F> InitialSolvePoint<WeibullDistribution<F>> for LeftCensoredDuration<S, F>
+impl<S, F> InitialSolvePoint<WeibullDistribution<F>> for LeftCensored<S, F, Ix1>
 where
     S: Data<Elem = F>,
     F: Float + FromPrimitive,
 {
     fn initial_solve_point(&self) -> WeibullDistribution<F> {
-        let lambda = self.duration.mean().unwrap_or_else(F::zero);
+        let lambda = self.0.mean().unwrap_or_else(F::zero);
         WeibullDistribution {
             rho: F::one(),
             lambda,
@@ -113,13 +111,13 @@ where
     }
 }
 
-impl<S, F> InitialSolvePoint<WeibullDistribution<F>> for IntervalCensoredDuration<S, F>
+impl<S, F> InitialSolvePoint<WeibullDistribution<F>> for IntervalCensored<S, F, Ix1>
 where
     S: Data<Elem = F>,
     F: Float + FromPrimitive,
 {
     fn initial_solve_point(&self) -> WeibullDistribution<F> {
-        let lambda = self.start_time.mean().unwrap_or_else(F::zero);
+        let lambda = self.start.mean().unwrap_or_else(F::zero);
         WeibullDistribution {
             rho: F::one(),
             lambda,

@@ -44,6 +44,16 @@ where
     pub weight: ArrayBase<W, D>,
 }
 
+impl<T, Distribution, W, F, D> InitialSolvePoint<Distribution> for Weighted<T, W, F, D>
+where
+    W: Data<Elem = F>,
+    T: InitialSolvePoint<Distribution>,
+{
+    fn initial_solve_point(&self) -> Distribution {
+        self.time.initial_solve_point()
+    }
+}
+
 pub trait InitialSolvePoint<T> {
     fn initial_solve_point(&self) -> T;
 }
@@ -131,7 +141,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::univariate::{Events, IntervalCensoredDuration};
     use super::*;
     use crate::distribution::weibull::WeibullDistribution;
     use ndarray::prelude::*;
@@ -140,14 +149,12 @@ mod tests {
 
     #[test]
     fn test_fit() {
-        let input_state = Events {
-            time: IntervalCensoredDuration {
-                start_time: array![0., 2., 5., 10.],
-                stop_time: array![2., 5., 10., 1e10f64],
+        let input_state = Weighted {
+            time: IntervalCensored {
+                start: array![0., 2., 5., 10.],
+                stop: array![2., 5., 10., 1e10f64],
             },
-            observed: Array::from_elem((4,), false),
             weight: array![1000. - 376., 376. - 82., 82. - 7., 7.],
-            truncation: (),
         };
 
         let fitter: BaseFitter<_, WeibullDistribution<f64>, f64> = BaseFitter {
