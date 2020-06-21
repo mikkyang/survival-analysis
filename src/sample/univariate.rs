@@ -120,7 +120,7 @@ impl<D, F, T, B> LogLikelihood<D, F>
 where
     D: LogHazard<Array1<F>, Array1<F>>
         + CumulativeHazard<Array1<F>, Array1<F>>
-        + LogCumulativeDensity<ArrayBase<T, Ix1>, Array1<F>>,
+        + LogCumulativeDensity<Array1<F>, Array1<F>>,
     F: Float + FromPrimitive,
     T: Data<Elem = F>,
     B: Data<Elem = bool>,
@@ -132,18 +132,16 @@ where
             ..
         } = self;
 
-        let observed_duration = filter(duration, observed);
+        let (observed_duration, censored_duration) = partition(duration, observed);
         let observed_log_hazard = distribution.log_hazard(&observed_duration);
         let observed_cumulative_hazard = distribution.cumulative_hazard(&observed_duration);
 
-        let log_cumulative_density = distribution.log_cumulative_density(&duration);
-        let observed_log_cumulative_density = filter(&log_cumulative_density, observed);
+        let censored_log_cumulative_density =
+            distribution.log_cumulative_density(&censored_duration);
 
         let n = F::from_usize(duration.len()).unwrap();
-        (observed_log_hazard.sum()
-            - observed_cumulative_hazard.sum()
-            - observed_log_cumulative_density.sum()
-            + log_cumulative_density.sum())
+        (observed_log_hazard.sum() - observed_cumulative_hazard.sum()
+            + censored_log_cumulative_density.sum())
             / n
     }
 }
@@ -153,7 +151,7 @@ impl<D, F, T, B, W> LogLikelihood<D, F>
 where
     D: LogHazard<Array1<F>, Array1<F>>
         + CumulativeHazard<Array1<F>, Array1<F>>
-        + LogCumulativeDensity<ArrayBase<T, Ix1>, Array1<F>>,
+        + LogCumulativeDensity<Array1<F>, Array1<F>>,
     F: Float + FromPrimitive,
     T: Data<Elem = F>,
     W: Data<Elem = F>,
@@ -167,20 +165,17 @@ where
             ..
         } = self;
 
-        let observed_duration = filter(duration, observed);
+        let (observed_duration, censored_duration) = partition(duration, observed);
         let observed_log_hazard = distribution.log_hazard(&observed_duration);
         let observed_cumulative_hazard = distribution.cumulative_hazard(&observed_duration);
 
-        let log_cumulative_density = distribution.log_cumulative_density(&duration);
-        let observed_log_cumulative_density = filter(&log_cumulative_density, observed);
+        let censored_log_cumulative_density =
+            distribution.log_cumulative_density(&censored_duration);
 
-        let observed_weight = filter(weight, observed);
+        let (observed_weight, censored_weight) = partition(weight, observed);
 
-        let all = observed_weight
-            * (&observed_log_hazard
-                - &observed_cumulative_hazard
-                - &observed_log_cumulative_density);
-        all.sum() + (weight * &log_cumulative_density).sum()
+        (observed_weight * (&observed_log_hazard - &observed_cumulative_hazard)).sum()
+            + (censored_weight * &censored_log_cumulative_density).sum()
     }
 }
 
