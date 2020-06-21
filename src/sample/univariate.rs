@@ -138,6 +138,18 @@ where
     }
 }
 
+impl<D, F, T> LogLikelihood<D, Array1<F>> for LeftCensored<T, F, Ix1>
+where
+    D: LogCumulativeDensity<ArrayBase<T, Ix1>, Array1<F>>,
+    F: Float,
+    T: Data<Elem = F>,
+{
+    fn log_likelihood(&self, distribution: &D) -> Array1<F> {
+        let LeftCensored(time) = self;
+        distribution.log_cumulative_density(&time)
+    }
+}
+
 impl<D, F, T, B> LogLikelihood<D, F>
     for Events<LeftCensoredDuration<T, F>, ArrayBase<B, Ix1>, (), ()>
 where
