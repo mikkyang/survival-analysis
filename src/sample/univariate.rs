@@ -1,4 +1,4 @@
-use super::{InitialSolvePoint, LogLikelihood, Uncensored};
+use super::{InitialSolvePoint, LeftCensored, LogLikelihood, Uncensored};
 use crate::distribution::{CumulativeHazard, LogCumulativeDensity, LogHazard, Survival};
 use crate::utils::{filter, partition};
 use ndarray::prelude::*;
@@ -110,6 +110,18 @@ where
     }
 }
 
+impl<D, F, T> LogLikelihood<D, F> for LeftCensored<T, F, Ix1>
+where
+    D: LogCumulativeDensity<ArrayBase<T, Ix1>, Array1<F>>,
+    F: Float,
+    T: Data<Elem = F>,
+{
+    fn log_likelihood(&self, distribution: &D) -> F {
+        let LeftCensored(time) = self;
+        distribution.log_cumulative_density(&time).sum()
+    }
+}
+
 impl<D, F, T, B> LogLikelihood<D, F>
     for Events<LeftCensoredDuration<T, F>, ArrayBase<B, Ix1>, (), ()>
 where
@@ -128,14 +140,8 @@ where
         } = self;
 
         let (observed_duration, censored_duration) = partition(duration, observed);
-        let observed_log_hazard = distribution.log_hazard(&observed_duration);
-        let observed_cumulative_hazard = distribution.cumulative_hazard(&observed_duration);
-
-        let censored_log_cumulative_density =
-            distribution.log_cumulative_density(&censored_duration);
-
-        observed_log_hazard.sum() - observed_cumulative_hazard.sum()
-            + censored_log_cumulative_density.sum()
+        Uncensored(observed_duration).log_likelihood(distribution)
+            + LeftCensored(censored_duration).log_likelihood(distribution)
     }
 }
 

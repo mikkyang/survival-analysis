@@ -12,6 +12,10 @@ pub struct Uncensored<T, F, D>(ArrayBase<T, D>)
 where
     T: Data<Elem = F>;
 
+pub struct LeftCensored<T, F, D>(ArrayBase<T, D>)
+where
+    T: Data<Elem = F>;
+
 pub trait InitialSolvePoint<T> {
     fn initial_solve_point(&self) -> T;
 }
