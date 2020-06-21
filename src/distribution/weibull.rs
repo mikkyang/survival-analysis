@@ -192,7 +192,7 @@ mod tests {
         };
 
         let actual = events.log_likelihood(&distribution);
-        let expected = -1.487385086209172;
+        let expected = -5.949540344836688;
 
         assert!((actual - expected).abs() < TOLERANCE_F64);
     }
@@ -214,7 +214,7 @@ mod tests {
         };
 
         let actual = events.log_likelihood(&distribution);
-        let expected = -1.322531928066164;
+        let expected = -5.290127712264656;
 
         assert!((actual - expected).abs() < TOLERANCE_F64);
     }
@@ -237,7 +237,7 @@ mod tests {
         };
 
         let actual = events.log_likelihood(&distribution);
-        let expected = -62.15034242023675;
+        let expected = -310.7517121011837;
 
         assert!((actual - expected).abs() < TOLERANCE_F64);
     }

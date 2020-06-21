@@ -47,7 +47,7 @@ where
 impl<D, F, T> LogLikelihood<D, F> for Uncensored<T, F, Ix1>
 where
     D: LogHazard<ArrayBase<T, Ix1>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
-    F: Float + FromPrimitive,
+    F: Float,
     T: Data<Elem = F>,
 {
     fn log_likelihood(&self, distribution: &D) -> F {
@@ -56,8 +56,7 @@ where
         let log_hazard = distribution.log_hazard(time);
         let cumulative_hazard = distribution.cumulative_hazard(time);
 
-        let n = F::from_usize(time.len()).unwrap();
-        (log_hazard.sum() - cumulative_hazard.sum()) / n
+        log_hazard.sum() - cumulative_hazard.sum()
     }
 }
 
@@ -65,7 +64,7 @@ impl<D, F, T, B> LogLikelihood<D, F>
     for Events<RightCensoredDuration<T, F>, ArrayBase<B, Ix1>, (), ()>
 where
     D: LogHazard<Array1<F>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
-    F: Float + FromPrimitive,
+    F: Float,
     T: Data<Elem = F>,
     B: Data<Elem = bool>,
 {
@@ -80,8 +79,7 @@ where
         let log_hazard = distribution.log_hazard(&observed_durations);
         let cumulative_hazard = distribution.cumulative_hazard(&duration);
 
-        let n = F::from_usize(duration.len()).unwrap();
-        (log_hazard.sum() - cumulative_hazard.sum()) / n
+        log_hazard.sum() - cumulative_hazard.sum()
     }
 }
 
@@ -89,7 +87,7 @@ impl<D, F, T, B, W> LogLikelihood<D, F>
     for Events<RightCensoredDuration<T, F>, ArrayBase<B, Ix1>, ArrayBase<W, Ix1>, ()>
 where
     D: LogHazard<Array1<F>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
-    F: Float + FromPrimitive,
+    F: Float,
     T: Data<Elem = F>,
     W: Data<Elem = F>,
     B: Data<Elem = bool>,
@@ -118,7 +116,7 @@ where
     D: LogHazard<Array1<F>, Array1<F>>
         + CumulativeHazard<Array1<F>, Array1<F>>
         + LogCumulativeDensity<Array1<F>, Array1<F>>,
-    F: Float + FromPrimitive,
+    F: Float,
     T: Data<Elem = F>,
     B: Data<Elem = bool>,
 {
@@ -136,10 +134,8 @@ where
         let censored_log_cumulative_density =
             distribution.log_cumulative_density(&censored_duration);
 
-        let n = F::from_usize(duration.len()).unwrap();
-        (observed_log_hazard.sum() - observed_cumulative_hazard.sum()
-            + censored_log_cumulative_density.sum())
-            / n
+        observed_log_hazard.sum() - observed_cumulative_hazard.sum()
+            + censored_log_cumulative_density.sum()
     }
 }
 
@@ -149,7 +145,7 @@ where
     D: LogHazard<Array1<F>, Array1<F>>
         + CumulativeHazard<Array1<F>, Array1<F>>
         + LogCumulativeDensity<Array1<F>, Array1<F>>,
-    F: Float + FromPrimitive,
+    F: Float,
     T: Data<Elem = F>,
     W: Data<Elem = F>,
     B: Data<Elem = bool>,
@@ -210,8 +206,7 @@ where
         .mapv_into(F::ln)
         .mapv_into(|x| clamp(x, min, max));
 
-        let n = F::from_usize(start_time.len()).unwrap();
-        (log_hazard.sum() - cumulative_hazard.sum() + survival.sum()) / n
+        log_hazard.sum() - cumulative_hazard.sum() + survival.sum()
     }
 }
 
