@@ -44,17 +44,14 @@ where
     }
 }
 
-impl<D, F, T> LogLikelihood<D, F> for Events<Uncensored<T, F, Ix1>, (), (), ()>
+impl<D, F, T> LogLikelihood<D, F> for Uncensored<T, F, Ix1>
 where
     D: LogHazard<ArrayBase<T, Ix1>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
     F: Float + FromPrimitive,
     T: Data<Elem = F>,
 {
     fn log_likelihood(&self, distribution: &D) -> F {
-        let Events {
-            time: Uncensored(time),
-            ..
-        } = self;
+        let Uncensored(time) = self;
 
         let log_hazard = distribution.log_hazard(time);
         let cumulative_hazard = distribution.cumulative_hazard(time);
