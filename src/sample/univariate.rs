@@ -222,7 +222,7 @@ where
         }
         .log_likelihood(distribution);
 
-        (observed + censored).sum() / weight.sum()
+        (observed.sum() + censored.sum()) / weight.sum()
     }
 }
 
@@ -320,23 +320,25 @@ where
             weight,
             ..
         } = self;
+        let (observed_weight, censored_weight) = partition(&weight, &observed);
+        let censored_start = filter(start_time, &!observed);
+        let (observed_duration, censored_stop) = partition(stop_time, observed);
 
-        let min = F::from_f64(-1e50).unwrap();
-        let max = F::from_f64(1e50).unwrap();
+        let observed = Weighted {
+            time: Uncensored(observed_duration),
+            weight: observed_weight,
+        }
+        .log_likelihood(distribution);
+        let censored = Weighted {
+            time: IntervalCensored {
+                start: censored_start,
+                stop: censored_stop,
+            },
+            weight: censored_weight,
+        }
+        .log_likelihood(distribution);
 
-        let (observed_weights, censored_weights) = partition(&weight, &observed);
-        let censored_starts = filter(start_time, &!observed);
-        let (observed_stops, censored_stops) = partition(stop_time, observed);
-
-        let log_hazard = &observed_weights * &distribution.log_hazard(&observed_stops);
-        let cumulative_hazard =
-            &observed_weights * &distribution.cumulative_hazard(&observed_stops);
-        let survival = (censored_weights
-            * (distribution.survival(&censored_starts) - distribution.survival(&censored_stops))
-                .mapv_into(F::ln))
-        .mapv_into(|x| clamp(x, min, max));
-
-        (log_hazard.sum() - cumulative_hazard.sum() + survival.sum()) / weight.sum()
+        (observed.sum() + censored.sum()) / weight.sum()
     }
 }
 
