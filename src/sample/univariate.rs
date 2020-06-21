@@ -1,4 +1,6 @@
-use super::{InitialSolvePoint, LeftCensored, LogLikelihood, Uncensored, Weighted};
+use super::{
+    InitialSolvePoint, IntervalCensored, LeftCensored, LogLikelihood, Uncensored, Weighted,
+};
 use crate::distribution::{CumulativeHazard, LogCumulativeDensity, LogHazard, Survival};
 use crate::utils::{filter, partition};
 use ndarray::prelude::*;
@@ -224,6 +226,46 @@ where
     }
 }
 
+impl<D, F, T> LogLikelihood<D, F> for IntervalCensored<T, F, Ix1>
+where
+    D: Survival<ArrayBase<T, Ix1>, Array1<F>>,
+    F: Float + FromPrimitive,
+    T: Data<Elem = F>,
+{
+    fn log_likelihood(&self, distribution: &D) -> F {
+        let IntervalCensored { start, stop } = self;
+
+        let min = F::from_f64(-1e50).unwrap();
+        let max = F::from_f64(1e50).unwrap();
+
+        let survival = (distribution.survival(&start) - distribution.survival(&stop))
+            .mapv_into(F::ln)
+            .mapv_into(|x| clamp(x, min, max));
+
+        survival.sum()
+    }
+}
+
+impl<D, F, T> LogLikelihood<D, Array1<F>> for IntervalCensored<T, F, Ix1>
+where
+    D: Survival<ArrayBase<T, Ix1>, Array1<F>>,
+    F: Float + FromPrimitive,
+    T: Data<Elem = F>,
+{
+    fn log_likelihood(&self, distribution: &D) -> Array1<F> {
+        let IntervalCensored { start, stop } = self;
+
+        let min = F::from_f64(-1e50).unwrap();
+        let max = F::from_f64(1e50).unwrap();
+
+        let survival = (distribution.survival(&start) - distribution.survival(&stop))
+            .mapv_into(F::ln)
+            .mapv_into(|x| clamp(x, min, max));
+
+        survival
+    }
+}
+
 impl<D, F, T, B> LogLikelihood<D, F>
     for Events<IntervalCensoredDuration<T, F>, ArrayBase<B, Ix1>, (), ()>
 where
@@ -244,21 +286,15 @@ where
             observed,
             ..
         } = self;
-
-        let min = F::from_f64(-1e50).unwrap();
-        let max = F::from_f64(1e50).unwrap();
-
         let censored_starts = filter(start_time, &!observed);
         let (observed_stops, censored_stops) = partition(stop_time, observed);
 
-        let log_hazard = distribution.log_hazard(&observed_stops);
-        let cumulative_hazard = distribution.cumulative_hazard(&observed_stops);
-        let survival = (distribution.survival(&censored_starts)
-            - distribution.survival(&censored_stops))
-        .mapv_into(F::ln)
-        .mapv_into(|x| clamp(x, min, max));
-
-        log_hazard.sum() - cumulative_hazard.sum() + survival.sum()
+        let f: F = Uncensored(observed_stops).log_likelihood(distribution);
+        f + IntervalCensored {
+            start: censored_starts,
+            stop: censored_stops,
+        }
+        .log_likelihood(distribution)
     }
 }
 

@@ -16,6 +16,14 @@ pub struct LeftCensored<T, F, D>(ArrayBase<T, D>)
 where
     T: Data<Elem = F>;
 
+pub struct IntervalCensored<T, F, D>
+where
+    T: Data<Elem = F>,
+{
+    pub start: ArrayBase<T, D>,
+    pub stop: ArrayBase<T, D>,
+}
+
 pub struct Weighted<T, W, F, D>
 where
     W: Data<Elem = F>,
