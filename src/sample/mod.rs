@@ -44,6 +44,10 @@ where
     pub weight: ArrayBase<W, D>,
 }
 
+pub struct LeftTruncation<T, F, D>(ArrayBase<T, D>)
+where
+    T: Data<Elem = F>;
+
 impl<T, Distribution, W, F, D> InitialSolvePoint<Distribution> for Weighted<T, W, F, D>
 where
     W: Data<Elem = F>,

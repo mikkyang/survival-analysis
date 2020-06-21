@@ -1,6 +1,3 @@
-use ndarray::prelude::*;
-use ndarray::Data;
-use std::iter::FromIterator;
 pub trait SafeLogExp {
     fn safe_ln(self) -> Self;
 
@@ -28,18 +25,4 @@ impl SafeLogExp for f64 {
     fn safe_exp(self) -> Self {
         f64::min(self, f64::MAX.ln() - 75.).exp()
     }
-}
-
-pub fn filter<A, S, B, D>(target: &ArrayBase<S, D>, should_keep: &ArrayBase<B, D>) -> Array1<A>
-where
-    A: Copy,
-    S: Data<Elem = A>,
-    B: Data<Elem = bool>,
-    D: Dimension,
-{
-    let iter = target
-        .iter()
-        .zip(should_keep.iter())
-        .filter_map(|(x, keep)| if *keep { Some(*x) } else { None });
-    Array::from_iter(iter)
 }

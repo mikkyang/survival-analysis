@@ -1,13 +1,11 @@
 use super::{
-    IntervalCensored, LeftCensored, LogLikelihood, PartiallyObserved, RightCensored, Uncensored,
-    Weighted,
+    IntervalCensored, LeftCensored, LeftTruncation, LogLikelihood, PartiallyObserved,
+    RightCensored, Uncensored, Weighted,
 };
 use crate::distribution::{CumulativeHazard, LogCumulativeDensity, LogHazard, Survival};
-use crate::utils::filter;
 use ndarray::prelude::*;
 use ndarray::{Data, OwnedRepr, ScalarOperand};
 use num_traits::{clamp, Float, FromPrimitive};
-use std::iter::FromIterator;
 
 pub trait FromEvents<F> {
     fn from_events<S: Data<Elem = F>, B: Data<Elem = bool>>(
@@ -73,6 +71,20 @@ where
     }
 }
 
+impl<T, F> LeftTruncation<T, F, Ix1>
+where
+    T: Data<Elem = F>,
+    F: Float,
+{
+    pub fn new(entry_time: ArrayBase<T, Ix1>) -> Result<Self, ()> {
+        let zero = F::zero();
+        if entry_time.iter().find(|&&t| t <= zero).is_some() {
+            Err(())
+        } else {
+            Ok(LeftTruncation(entry_time))
+        }
+    }
+}
 pub struct RightCensoredDuration<T, F>
 where
     T: Data<Elem = F>,
@@ -286,22 +298,15 @@ where
     }
 }
 
-impl<D, F, W, E> LogLikelihood<D, F> for (ArrayBase<W, Ix1>, ArrayBase<E, Ix1>)
+impl<D, F, T> LogLikelihood<D, Array1<F>> for LeftTruncation<T, F, Ix1>
 where
-    D: CumulativeHazard<Array1<F>, Array1<F>>,
+    D: CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
     F: Float + FromPrimitive,
-    W: Data<Elem = F>,
-    E: Data<Elem = F>,
+    T: Data<Elem = F>,
 {
-    fn log_likelihood(&self, distribution: &D) -> F {
-        let (weight, entry) = self;
+    fn log_likelihood(&self, distribution: &D) -> Array1<F> {
+        let LeftTruncation(entry_time) = self;
 
-        let zero = F::zero();
-        let entry_is_non_zero = entry.mapv(|x| x > zero);
-
-        let non_zero_weights = filter(&weight, &entry_is_non_zero);
-        let non_zero_entries = Array::from_iter(entry.iter().filter(|x| **x > zero).map(|x| *x));
-
-        (non_zero_weights * distribution.cumulative_hazard(&non_zero_entries)).sum() / weight.sum()
+        distribution.cumulative_hazard(entry_time)
     }
 }
