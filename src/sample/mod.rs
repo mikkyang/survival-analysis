@@ -12,6 +12,10 @@ pub struct Uncensored<T, F, D>(pub ArrayBase<T, D>)
 where
     T: Data<Elem = F>;
 
+pub struct RightCensored<T, F, D>(pub ArrayBase<T, D>)
+where
+    T: Data<Elem = F>;
+
 pub struct LeftCensored<T, F, D>(pub ArrayBase<T, D>)
 where
     T: Data<Elem = F>;

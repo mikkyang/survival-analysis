@@ -1,5 +1,6 @@
 use super::{
-    InitialSolvePoint, IntervalCensored, LeftCensored, LogLikelihood, Uncensored, Weighted,
+    InitialSolvePoint, IntervalCensored, LeftCensored, LogLikelihood, RightCensored, Uncensored,
+    Weighted,
 };
 use crate::distribution::{CumulativeHazard, LogCumulativeDensity, LogHazard, Survival};
 use crate::utils::{filter, partition};
@@ -92,10 +93,36 @@ where
     }
 }
 
+impl<D, F, T> LogLikelihood<D, F> for RightCensored<T, F, Ix1>
+where
+    D: LogHazard<ArrayBase<T, Ix1>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
+    F: Float,
+    T: Data<Elem = F>,
+{
+    fn log_likelihood(&self, distribution: &D) -> F {
+        let RightCensored(time) = self;
+
+        -distribution.cumulative_hazard(&time).sum()
+    }
+}
+
+impl<D, F, T> LogLikelihood<D, Array1<F>> for RightCensored<T, F, Ix1>
+where
+    D: LogHazard<ArrayBase<T, Ix1>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
+    F: Float,
+    T: Data<Elem = F>,
+{
+    fn log_likelihood(&self, distribution: &D) -> Array1<F> {
+        let RightCensored(time) = self;
+
+        -distribution.cumulative_hazard(&time)
+    }
+}
+
 impl<D, F, T, B> LogLikelihood<D, F>
     for Events<RightCensoredDuration<T, F>, ArrayBase<B, Ix1>, (), ()>
 where
-    D: LogHazard<Array1<F>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
+    D: LogHazard<Array1<F>, Array1<F>> + CumulativeHazard<Array1<F>, Array1<F>>,
     F: Float,
     T: Data<Elem = F>,
     B: Data<Elem = bool>,
@@ -107,11 +134,10 @@ where
             ..
         } = self;
 
-        let observed_durations = filter(&duration, &observed);
-        let log_hazard = distribution.log_hazard(&observed_durations);
-        let cumulative_hazard = distribution.cumulative_hazard(&duration);
+        let (observed, censored) = partition(&duration, &observed);
 
-        log_hazard.sum() - cumulative_hazard.sum()
+        let f: F = Uncensored(observed).log_likelihood(distribution);
+        f + RightCensored(censored).log_likelihood(distribution)
     }
 }
 
