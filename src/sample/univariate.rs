@@ -60,6 +60,22 @@ where
     }
 }
 
+impl<D, F, T> LogLikelihood<D, Array1<F>> for Uncensored<T, F, Ix1>
+where
+    D: LogHazard<ArrayBase<T, Ix1>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
+    F: Float,
+    T: Data<Elem = F>,
+{
+    fn log_likelihood(&self, distribution: &D) -> Array1<F> {
+        let Uncensored(time) = self;
+
+        let log_hazard = distribution.log_hazard(time);
+        let cumulative_hazard = distribution.cumulative_hazard(time);
+
+        log_hazard - cumulative_hazard
+    }
+}
+
 impl<D, F, T, B> LogLikelihood<D, F>
     for Events<RightCensoredDuration<T, F>, ArrayBase<B, Ix1>, (), ()>
 where
@@ -140,8 +156,8 @@ where
         } = self;
 
         let (observed_duration, censored_duration) = partition(duration, observed);
-        Uncensored(observed_duration).log_likelihood(distribution)
-            + LeftCensored(censored_duration).log_likelihood(distribution)
+        let uncensored: F = Uncensored(observed_duration).log_likelihood(distribution);
+        uncensored + LeftCensored(censored_duration).log_likelihood(distribution)
     }
 }
 
