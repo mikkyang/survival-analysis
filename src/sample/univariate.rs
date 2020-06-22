@@ -45,7 +45,7 @@ where
 impl<F, C> FromEvents<(F, F)> for PartiallyObserved<OwnedRepr<F>, F, Ix1, C>
 where
     F: Copy,
-    C: From<Vec<(F, F)>>,
+    C: From<(Vec<F>, Vec<F>)>,
 {
     fn from_events<S: Data<Elem = (F, F)>, B: Data<Elem = bool>>(
         events: &ArrayBase<S, Ix1>,
@@ -53,20 +53,23 @@ where
     ) -> Self {
         let half_capacity = events.len() / 2;
         let mut observed_events = Vec::with_capacity(half_capacity);
-        let mut censored_events = Vec::with_capacity(half_capacity);
+        let mut censored_starts = Vec::with_capacity(half_capacity);
+        let mut censored_stops = Vec::with_capacity(half_capacity);
 
         for (event, o) in events.iter().zip(event_observed.iter()) {
             if *o {
-                let (_, time) = event;
-                observed_events.push(*time)
+                let (_, time) = *event;
+                observed_events.push(time)
             } else {
-                censored_events.push(*event)
+                let (start, stop) = *event;
+                censored_starts.push(start);
+                censored_stops.push(stop);
             }
         }
 
         PartiallyObserved {
             observed: Uncensored(Array::from(observed_events)),
-            censored: C::from(censored_events),
+            censored: C::from((censored_starts, censored_stops)),
         }
     }
 }
@@ -98,18 +101,11 @@ impl<F> From<Vec<F>> for LeftCensored<OwnedRepr<F>, F, Ix1> {
     }
 }
 
-impl<F> From<Vec<(F, F)>> for IntervalCensored<OwnedRepr<F>, F, Ix1> {
-    fn from(vec: Vec<(F, F)>) -> Self {
-        let mut starts = Vec::with_capacity(vec.len());
-        let mut stops = Vec::with_capacity(vec.len());
-        for (start, stop) in vec.into_iter() {
-            starts.push(start);
-            stops.push(stop);
-        }
-
+impl<F> From<(Vec<F>, Vec<F>)> for IntervalCensored<OwnedRepr<F>, F, Ix1> {
+    fn from((start, stop): (Vec<F>, Vec<F>)) -> Self {
         IntervalCensored {
-            start: Array::from(starts),
-            stop: Array::from(stops),
+            start: Array::from(start),
+            stop: Array::from(stop),
         }
     }
 }
