@@ -8,45 +8,28 @@ use std::marker::PhantomData;
 
 pub mod univariate;
 
-pub struct PartiallyObserved<T, D, C>
-where
-    T: RawData,
-{
+pub struct PartiallyObserved<T: RawData, D, C> {
     pub observed: Uncensored<T, D>,
     pub censored: C,
 }
 
-pub struct Uncensored<T, D>(pub ArrayBase<T, D>)
-where
-    T: RawData;
+pub struct Uncensored<T: RawData, D>(pub ArrayBase<T, D>);
 
-pub struct RightCensored<T, D>(pub ArrayBase<T, D>)
-where
-    T: RawData;
+pub struct RightCensored<T: RawData, D>(pub ArrayBase<T, D>);
 
-pub struct LeftCensored<T, D>(pub ArrayBase<T, D>)
-where
-    T: RawData;
+pub struct LeftCensored<T: RawData, D>(pub ArrayBase<T, D>);
 
-pub struct IntervalCensored<T, D>
-where
-    T: RawData,
-{
+pub struct IntervalCensored<T: RawData, D> {
     pub start: ArrayBase<T, D>,
     pub stop: ArrayBase<T, D>,
 }
 
-pub struct Weighted<T, W, D>
-where
-    W: RawData,
-{
+pub struct Weighted<T, W: RawData, D> {
     pub time: T,
     pub weight: ArrayBase<W, D>,
 }
 
-pub struct LeftTruncation<T, D>(ArrayBase<T, D>)
-where
-    T: RawData;
+pub struct LeftTruncation<T: RawData, D>(ArrayBase<T, D>);
 
 impl<T, Distribution, W, D> InitialSolvePoint<Distribution> for Weighted<T, W, D>
 where
