@@ -183,7 +183,6 @@ mod tests {
     use crate::sample::univariate::*;
     use crate::sample::*;
     use ndarray::prelude::*;
-    use ndarray::OwnedRepr;
 
     const TOLERANCE_F32: f32 = 1e-5;
     const TOLERANCE_F64: f64 = 1e-5;
@@ -267,9 +266,9 @@ mod tests {
             lambda: 0.5,
         };
 
-        let events: PartiallyObserved<OwnedRepr<_>, _, IntervalCensored<_, _>> =
+        let events: PartiallyObserved<_, _, IntervalCensored<_, _>> =
             PartiallyObserved::from_events(
-                &array![(1., 5.), (2., 6.), (3., 7.), (4., 8.), (5., 9.)],
+                &[(1., 5.), (2., 6.), (3., 7.), (4., 8.), (5., 9.)],
                 &array![true, false, true, false, true],
             );
 
