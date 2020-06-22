@@ -24,9 +24,8 @@ where
         events: &ArrayBase<S, Ix1>,
         event_observed: &ArrayBase<B, Ix1>,
     ) -> Self {
-        let half_capacity = events.len() / 2;
-        let mut observed_events = Vec::with_capacity(half_capacity);
-        let mut censored_events = Vec::with_capacity(half_capacity);
+        let mut observed_events = Vec::new();
+        let mut censored_events = Vec::new();
 
         for (event, o) in events.iter().zip(event_observed.iter()) {
             if *o {
@@ -52,10 +51,9 @@ where
         events: &ArrayBase<S, Ix1>,
         event_observed: &ArrayBase<B, Ix1>,
     ) -> Self {
-        let half_capacity = events.len() / 2;
-        let mut observed_events = Vec::with_capacity(half_capacity);
-        let mut censored_starts = Vec::with_capacity(half_capacity);
-        let mut censored_stops = Vec::with_capacity(half_capacity);
+        let mut observed_events = Vec::new();
+        let mut censored_starts = Vec::new();
+        let mut censored_stops = Vec::new();
 
         for (event, o) in events.iter().zip(event_observed.iter()) {
             if *o {
