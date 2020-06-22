@@ -75,7 +75,7 @@ where
     }
 }
 
-impl<T, F> LeftTruncation<T, F, Ix1>
+impl<T, F> LeftTruncation<T, Ix1>
 where
     T: Data<Elem = F>,
     F: Float,
@@ -228,7 +228,7 @@ where
     }
 }
 
-impl<D, F, T> LogLikelihood<D, Array1<F>> for LeftTruncation<T, F, Ix1>
+impl<D, F, T> LogLikelihood<D, Array1<F>> for LeftTruncation<T, Ix1>
 where
     D: CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
     F: Float + FromPrimitive,
