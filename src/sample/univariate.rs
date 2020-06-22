@@ -27,11 +27,11 @@ where
         let mut observed_events = Vec::new();
         let mut censored_events = Vec::new();
 
-        for (event, o) in events.iter().zip(event_observed.iter()) {
-            if *o {
-                observed_events.push(*event)
+        for (&event, &o) in events.iter().zip(event_observed.iter()) {
+            if o {
+                observed_events.push(event)
             } else {
-                censored_events.push(*event)
+                censored_events.push(event)
             }
         }
 
@@ -55,12 +55,12 @@ where
         let mut censored_starts = Vec::new();
         let mut censored_stops = Vec::new();
 
-        for (event, o) in events.iter().zip(event_observed.iter()) {
-            if *o {
-                let (_, time) = *event;
+        for (&event, &o) in events.iter().zip(event_observed.iter()) {
+            if o {
+                let (_, time) = event;
                 observed_events.push(time)
             } else {
-                let (start, stop) = *event;
+                let (start, stop) = event;
                 censored_starts.push(start);
                 censored_stops.push(stop);
             }
