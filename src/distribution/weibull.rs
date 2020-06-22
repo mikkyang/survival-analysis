@@ -234,7 +234,7 @@ mod tests {
         let durations = array![1., 2., 3., 4.];
 
         let events: PartiallyObserved<_, _, RightCensored<_, _>> =
-            PartiallyObserved::from_events(&durations.view(), &array![true, false, true, false]);
+            PartiallyObserved::from_events(&durations.view(), &[true, false, true, false]);
 
         let actual: f64 = events.log_likelihood(&distribution);
         let expected = -5.949540344836688;
@@ -251,7 +251,7 @@ mod tests {
 
         let events: PartiallyObserved<_, _, LeftCensored<_, _>> = PartiallyObserved::from_events(
             &array![1., 2., 3., 4.],
-            &array![true, false, true, false],
+            array![true, false, true, false].view(),
         );
 
         let actual: f64 = events.log_likelihood(&distribution);

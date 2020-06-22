@@ -8,26 +8,26 @@ use ndarray::{Data, OwnedRepr, RawData, ScalarOperand};
 use num_traits::{clamp, Float, FromPrimitive};
 use std::ops::{Add, Neg, Sub};
 
-pub trait FromEvents<F> {
-    fn from_events<S: Data<Elem = F>, B: Data<Elem = bool>>(
-        events: &ArrayBase<S, Ix1>,
-        event_observed: &ArrayBase<B, Ix1>,
+pub trait FromEvents<'a, F: 'a> {
+    fn from_events(
+        events: impl IntoIterator<Item = &'a F>,
+        event_observed: impl IntoIterator<Item = &'a bool>,
     ) -> Self;
 }
 
-impl<F, C> FromEvents<F> for PartiallyObserved<OwnedRepr<F>, Ix1, C>
+impl<'a, F, C> FromEvents<'a, F> for PartiallyObserved<OwnedRepr<F>, Ix1, C>
 where
-    F: Copy,
+    F: 'a + Copy,
     C: From<Vec<F>>,
 {
-    fn from_events<S: Data<Elem = F>, B: Data<Elem = bool>>(
-        events: &ArrayBase<S, Ix1>,
-        event_observed: &ArrayBase<B, Ix1>,
+    fn from_events(
+        events: impl IntoIterator<Item = &'a F>,
+        event_observed: impl IntoIterator<Item = &'a bool>,
     ) -> Self {
         let mut observed_events = Vec::new();
         let mut censored_events = Vec::new();
 
-        for (&event, &o) in events.iter().zip(event_observed.iter()) {
+        for (&event, &o) in events.into_iter().zip(event_observed) {
             if o {
                 observed_events.push(event)
             } else {
@@ -42,20 +42,20 @@ where
     }
 }
 
-impl<F, C> FromEvents<(F, F)> for PartiallyObserved<OwnedRepr<F>, Ix1, C>
+impl<'a, F, C> FromEvents<'a, (F, F)> for PartiallyObserved<OwnedRepr<F>, Ix1, C>
 where
-    F: Copy,
+    F: 'a + Copy,
     C: From<(Vec<F>, Vec<F>)>,
 {
-    fn from_events<S: Data<Elem = (F, F)>, B: Data<Elem = bool>>(
-        events: &ArrayBase<S, Ix1>,
-        event_observed: &ArrayBase<B, Ix1>,
+    fn from_events(
+        events: impl IntoIterator<Item = &'a (F, F)>,
+        event_observed: impl IntoIterator<Item = &'a bool>,
     ) -> Self {
         let mut observed_events = Vec::new();
         let mut censored_starts = Vec::new();
         let mut censored_stops = Vec::new();
 
-        for (&event, &o) in events.iter().zip(event_observed.iter()) {
+        for (&event, &o) in events.into_iter().zip(event_observed) {
             if o {
                 let (_, time) = event;
                 observed_events.push(time)
