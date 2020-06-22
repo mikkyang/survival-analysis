@@ -144,11 +144,7 @@ where
 {
     fn log_likelihood(&self, distribution: &D) -> O {
         let Uncensored(time) = self;
-
-        let log_hazard = distribution.log_hazard(time);
-        let cumulative_hazard = distribution.cumulative_hazard(time);
-
-        log_hazard - cumulative_hazard
+        distribution.log_hazard(time) - distribution.cumulative_hazard(time)
     }
 }
 
@@ -222,7 +218,6 @@ where
 {
     fn log_likelihood(&self, distribution: &D) -> Array1<F> {
         let LeftTruncation(entry_time) = self;
-
         distribution.cumulative_hazard(entry_time)
     }
 }
