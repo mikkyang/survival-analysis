@@ -135,7 +135,7 @@ where
     }
 }
 
-impl<S, F> InitialSolvePoint<WeibullDistribution<F>> for RightCensored<S, F, Ix1>
+impl<S, F> InitialSolvePoint<WeibullDistribution<F>> for RightCensored<S, Ix1>
 where
     S: Data<Elem = F>,
     F: Float + FromPrimitive,
@@ -149,7 +149,7 @@ where
     }
 }
 
-impl<S, F> InitialSolvePoint<WeibullDistribution<F>> for LeftCensored<S, F, Ix1>
+impl<S, F> InitialSolvePoint<WeibullDistribution<F>> for LeftCensored<S, Ix1>
 where
     S: Data<Elem = F>,
     F: Float + FromPrimitive,
@@ -163,7 +163,7 @@ where
     }
 }
 
-impl<S, F> InitialSolvePoint<WeibullDistribution<F>> for IntervalCensored<S, F, Ix1>
+impl<S, F> InitialSolvePoint<WeibullDistribution<F>> for IntervalCensored<S, Ix1>
 where
     S: Data<Elem = F>,
     F: Float + FromPrimitive,
@@ -233,7 +233,7 @@ mod tests {
 
         let durations = array![1., 2., 3., 4.];
 
-        let events: PartiallyObserved<_, _, RightCensored<_, _, _>> =
+        let events: PartiallyObserved<_, _, RightCensored<_, _>> =
             PartiallyObserved::from_events(&durations.view(), &array![true, false, true, false]);
 
         let actual: f64 = events.log_likelihood(&distribution);
@@ -249,7 +249,7 @@ mod tests {
             lambda: 0.5,
         };
 
-        let events: PartiallyObserved<_, _, LeftCensored<_, _, _>> = PartiallyObserved::from_events(
+        let events: PartiallyObserved<_, _, LeftCensored<_, _>> = PartiallyObserved::from_events(
             &array![1., 2., 3., 4.],
             &array![true, false, true, false],
         );
@@ -267,7 +267,7 @@ mod tests {
             lambda: 0.5,
         };
 
-        let events: PartiallyObserved<OwnedRepr<_>, _, IntervalCensored<_, _, _>> =
+        let events: PartiallyObserved<OwnedRepr<_>, _, IntervalCensored<_, _>> =
             PartiallyObserved::from_events(
                 &array![(1., 5.), (2., 6.), (3., 7.), (4., 8.), (5., 9.)],
                 &array![true, false, true, false, true],

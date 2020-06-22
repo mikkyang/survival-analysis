@@ -90,19 +90,19 @@ where
     }
 }
 
-impl<F> From<Vec<F>> for RightCensored<OwnedRepr<F>, F, Ix1> {
+impl<F> From<Vec<F>> for RightCensored<OwnedRepr<F>, Ix1> {
     fn from(vec: Vec<F>) -> Self {
         RightCensored(Array::from(vec))
     }
 }
 
-impl<F> From<Vec<F>> for LeftCensored<OwnedRepr<F>, F, Ix1> {
+impl<F> From<Vec<F>> for LeftCensored<OwnedRepr<F>, Ix1> {
     fn from(vec: Vec<F>) -> Self {
         LeftCensored(Array::from(vec))
     }
 }
 
-impl<F> From<(Vec<F>, Vec<F>)> for IntervalCensored<OwnedRepr<F>, F, Ix1> {
+impl<F> From<(Vec<F>, Vec<F>)> for IntervalCensored<OwnedRepr<F>, Ix1> {
     fn from((start, stop): (Vec<F>, Vec<F>)) -> Self {
         IntervalCensored {
             start: Array::from(start),
@@ -166,23 +166,22 @@ where
     }
 }
 
-impl<D, O, F, T> LogLikelihood<D, O> for RightCensored<T, F, Ix1>
+impl<D, O, T> LogLikelihood<D, O> for RightCensored<T, Ix1>
 where
     D: LogHazard<ArrayBase<T, Ix1>, O> + CumulativeHazard<ArrayBase<T, Ix1>, O>,
     O: Neg<Output = O>,
-    T: Data<Elem = F>,
+    T: RawData,
 {
     fn log_likelihood(&self, distribution: &D) -> O {
         let RightCensored(time) = self;
-
         -distribution.cumulative_hazard(&time)
     }
 }
 
-impl<D, O, F, T> LogLikelihood<D, O> for LeftCensored<T, F, Ix1>
+impl<D, O, T> LogLikelihood<D, O> for LeftCensored<T, Ix1>
 where
     D: LogCumulativeDensity<ArrayBase<T, Ix1>, O>,
-    T: Data<Elem = F>,
+    T: RawData,
 {
     fn log_likelihood(&self, distribution: &D) -> O {
         let LeftCensored(time) = self;
@@ -190,10 +189,17 @@ where
     }
 }
 
-impl<D, F, T> LogLikelihood<D, F> for IntervalCensored<T, F, Ix1>
+/// A trait used to allow both log likelihood to return both scalar and vector
+/// types for IntervalCensored data.
+pub trait UpstreamTraitHack {}
+
+impl UpstreamTraitHack for f32 {}
+impl UpstreamTraitHack for f64 {}
+
+impl<D, F, T> LogLikelihood<D, F> for IntervalCensored<T, Ix1>
 where
     D: Survival<ArrayBase<T, Ix1>, Array1<F>>,
-    F: Float + FromPrimitive,
+    F: Float + FromPrimitive + UpstreamTraitHack,
     T: Data<Elem = F>,
 {
     fn log_likelihood(&self, distribution: &D) -> F {
@@ -202,7 +208,7 @@ where
     }
 }
 
-impl<D, F, T> LogLikelihood<D, Array1<F>> for IntervalCensored<T, F, Ix1>
+impl<D, F, T> LogLikelihood<D, Array1<F>> for IntervalCensored<T, Ix1>
 where
     D: Survival<ArrayBase<T, Ix1>, Array1<F>>,
     F: Float + FromPrimitive,

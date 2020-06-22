@@ -20,17 +20,17 @@ pub struct Uncensored<T, D>(pub ArrayBase<T, D>)
 where
     T: RawData;
 
-pub struct RightCensored<T, F, D>(pub ArrayBase<T, D>)
+pub struct RightCensored<T, D>(pub ArrayBase<T, D>)
 where
-    T: Data<Elem = F>;
+    T: RawData;
 
-pub struct LeftCensored<T, F, D>(pub ArrayBase<T, D>)
+pub struct LeftCensored<T, D>(pub ArrayBase<T, D>)
 where
-    T: Data<Elem = F>;
+    T: RawData;
 
-pub struct IntervalCensored<T, F, D>
+pub struct IntervalCensored<T, D>
 where
-    T: Data<Elem = F>,
+    T: RawData,
 {
     pub start: ArrayBase<T, D>,
     pub stop: ArrayBase<T, D>,
