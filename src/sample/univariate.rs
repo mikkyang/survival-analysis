@@ -109,22 +109,6 @@ impl<F> From<(Vec<F>, Vec<F>)> for IntervalCensored<OwnedRepr<F>, Ix1> {
     }
 }
 
-impl<D, O, T> LogLikelihood<D, O> for Uncensored<T, Ix1>
-where
-    D: LogHazard<ArrayBase<T, Ix1>, O> + CumulativeHazard<ArrayBase<T, Ix1>, O>,
-    O: Sub<Output = O>,
-    T: RawData,
-{
-    fn log_likelihood(&self, distribution: &D) -> O {
-        let Uncensored(time) = self;
-
-        let log_hazard = distribution.log_hazard(time);
-        let cumulative_hazard = distribution.cumulative_hazard(time);
-
-        log_hazard - cumulative_hazard
-    }
-}
-
 impl<D, F, T, W> LogLikelihood<D, F> for Weighted<T, W, Ix1>
 where
     T: LogLikelihood<D, Array1<F>>,
@@ -149,6 +133,22 @@ where
     fn log_likelihood(&self, distribution: &D) -> O {
         let PartiallyObserved { observed, censored } = self;
         observed.log_likelihood(distribution) + censored.log_likelihood(distribution)
+    }
+}
+
+impl<D, O, T> LogLikelihood<D, O> for Uncensored<T, Ix1>
+where
+    D: LogHazard<ArrayBase<T, Ix1>, O> + CumulativeHazard<ArrayBase<T, Ix1>, O>,
+    O: Sub<Output = O>,
+    T: RawData,
+{
+    fn log_likelihood(&self, distribution: &D) -> O {
+        let Uncensored(time) = self;
+
+        let log_hazard = distribution.log_hazard(time);
+        let cumulative_hazard = distribution.cumulative_hazard(time);
+
+        log_hazard - cumulative_hazard
     }
 }
 
