@@ -4,7 +4,7 @@ use super::{
 };
 use crate::distribution::{CumulativeHazard, LogCumulativeDensity, LogHazard, Survival};
 use ndarray::prelude::*;
-use ndarray::{Data, OwnedRepr, ScalarOperand};
+use ndarray::{Data, OwnedRepr, RawData, ScalarOperand};
 use num_traits::{clamp, Float, FromPrimitive};
 use std::ops::{Neg, Sub};
 
@@ -111,11 +111,11 @@ impl<F> From<(Vec<F>, Vec<F>)> for IntervalCensored<OwnedRepr<F>, F, Ix1> {
     }
 }
 
-impl<D, O, T, F> LogLikelihood<D, O> for Uncensored<T, F, Ix1>
+impl<D, O, T> LogLikelihood<D, O> for Uncensored<T, Ix1>
 where
     D: LogHazard<ArrayBase<T, Ix1>, O> + CumulativeHazard<ArrayBase<T, Ix1>, O>,
-    T: Data<Elem = F>,
     O: Sub<Output = O>,
+    T: RawData,
 {
     fn log_likelihood(&self, distribution: &D) -> O {
         let Uncensored(time) = self;

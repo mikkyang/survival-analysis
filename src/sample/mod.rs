@@ -1,6 +1,6 @@
 use argmin::prelude::*;
 use argmin::solver::neldermead::NelderMead;
-use ndarray::{ArrayBase, Data};
+use ndarray::{ArrayBase, Data, RawData};
 use num_traits::{Float, FloatConst, FromPrimitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
@@ -12,13 +12,13 @@ pub struct PartiallyObserved<T, F, D, C>
 where
     T: Data<Elem = F>,
 {
-    pub observed: Uncensored<T, F, D>,
+    pub observed: Uncensored<T, D>,
     pub censored: C,
 }
 
-pub struct Uncensored<T, F, D>(pub ArrayBase<T, D>)
+pub struct Uncensored<T, D>(pub ArrayBase<T, D>)
 where
-    T: Data<Elem = F>;
+    T: RawData;
 
 pub struct RightCensored<T, F, D>(pub ArrayBase<T, D>)
 where
