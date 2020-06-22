@@ -1,5 +1,5 @@
 use super::{CumulativeHazard, LogCumulativeDensity, LogHazard, Survival};
-use crate::sample::InitialSolvePoint;
+use crate::sample::fitter::InitialSolvePoint;
 use crate::sample::{IntervalCensored, LeftCensored, RightCensored};
 use crate::utils::SafeLogExp;
 use ndarray::{Array, ArrayBase, Data, Dimension, Ix1, ScalarOperand};
