@@ -6,7 +6,7 @@ use crate::distribution::{CumulativeHazard, LogCumulativeDensity, LogHazard, Sur
 use ndarray::prelude::*;
 use ndarray::{Data, OwnedRepr, RawData, ScalarOperand};
 use num_traits::{clamp, Float, FromPrimitive};
-use std::ops::{Neg, Sub};
+use std::ops::{Add, Neg, Sub};
 
 pub trait FromEvents<F> {
     fn from_events<S: Data<Elem = F>, B: Data<Elem = bool>>(
@@ -15,7 +15,7 @@ pub trait FromEvents<F> {
     ) -> Self;
 }
 
-impl<F, C> FromEvents<F> for PartiallyObserved<OwnedRepr<F>, F, Ix1, C>
+impl<F, C> FromEvents<F> for PartiallyObserved<OwnedRepr<F>, Ix1, C>
 where
     F: Copy,
     C: From<Vec<F>>,
@@ -43,7 +43,7 @@ where
     }
 }
 
-impl<F, C> FromEvents<(F, F)> for PartiallyObserved<OwnedRepr<F>, F, Ix1, C>
+impl<F, C> FromEvents<(F, F)> for PartiallyObserved<OwnedRepr<F>, Ix1, C>
 where
     F: Copy,
     C: From<(Vec<F>, Vec<F>)>,
@@ -153,14 +153,14 @@ where
     }
 }
 
-impl<D, F, T, C> LogLikelihood<D, F> for PartiallyObserved<T, F, Ix1, C>
+impl<D, O, T, C> LogLikelihood<D, O> for PartiallyObserved<T, Ix1, C>
 where
-    D: LogHazard<ArrayBase<T, Ix1>, F> + CumulativeHazard<ArrayBase<T, Ix1>, F>,
-    F: Float,
-    T: Data<Elem = F>,
-    C: LogLikelihood<D, F>,
+    D: LogHazard<ArrayBase<T, Ix1>, O> + CumulativeHazard<ArrayBase<T, Ix1>, O>,
+    O: Sub<Output = O> + Add<Output = O>,
+    T: RawData,
+    C: LogLikelihood<D, O>,
 {
-    fn log_likelihood(&self, distribution: &D) -> F {
+    fn log_likelihood(&self, distribution: &D) -> O {
         let PartiallyObserved { observed, censored } = self;
         observed.log_likelihood(distribution) + censored.log_likelihood(distribution)
     }

@@ -8,9 +8,9 @@ use std::marker::PhantomData;
 
 pub mod univariate;
 
-pub struct PartiallyObserved<T, F, D, C>
+pub struct PartiallyObserved<T, D, C>
 where
-    T: Data<Elem = F>,
+    T: RawData,
 {
     pub observed: Uncensored<T, D>,
     pub censored: C,

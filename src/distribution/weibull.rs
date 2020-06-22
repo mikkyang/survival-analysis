@@ -227,16 +227,16 @@ mod tests {
     #[test]
     fn log_likelihood_right() {
         let distribution = WeibullDistribution {
-            rho: 1.3f64,
+            rho: 1.3,
             lambda: 2.3,
         };
 
         let durations = array![1., 2., 3., 4.];
 
-        let events: PartiallyObserved<_, _, _, RightCensored<_, _, _>> =
+        let events: PartiallyObserved<_, _, RightCensored<_, _, _>> =
             PartiallyObserved::from_events(&durations.view(), &array![true, false, true, false]);
 
-        let actual = events.log_likelihood(&distribution);
+        let actual: f64 = events.log_likelihood(&distribution);
         let expected = -5.949540344836688;
 
         assert!((actual - expected).abs() < TOLERANCE_F64);
@@ -245,17 +245,16 @@ mod tests {
     #[test]
     fn log_likelihood_left() {
         let distribution = WeibullDistribution {
-            rho: 0.7f64,
+            rho: 0.7,
             lambda: 0.5,
         };
 
-        let events: PartiallyObserved<_, _, _, LeftCensored<_, _, _>> =
-            PartiallyObserved::from_events(
-                &array![1., 2., 3., 4.],
-                &array![true, false, true, false],
-            );
+        let events: PartiallyObserved<_, _, LeftCensored<_, _, _>> = PartiallyObserved::from_events(
+            &array![1., 2., 3., 4.],
+            &array![true, false, true, false],
+        );
 
-        let actual = events.log_likelihood(&distribution);
+        let actual: f64 = events.log_likelihood(&distribution);
         let expected = -5.290127712264656;
 
         assert!((actual - expected).abs() < TOLERANCE_F64);
@@ -264,17 +263,17 @@ mod tests {
     #[test]
     fn log_likelihood_interval() {
         let distribution = WeibullDistribution {
-            rho: 1.7f64,
+            rho: 1.7,
             lambda: 0.5,
         };
 
-        let events: PartiallyObserved<OwnedRepr<_>, _, _, IntervalCensored<_, _, _>> =
+        let events: PartiallyObserved<OwnedRepr<_>, _, IntervalCensored<_, _, _>> =
             PartiallyObserved::from_events(
                 &array![(1., 5.), (2., 6.), (3., 7.), (4., 8.), (5., 9.)],
                 &array![true, false, true, false, true],
             );
 
-        let actual = events.log_likelihood(&distribution);
+        let actual: f64 = events.log_likelihood(&distribution);
         let expected = -310.7517121011837;
 
         assert!((actual - expected).abs() < TOLERANCE_F64);
