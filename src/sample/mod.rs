@@ -1,6 +1,6 @@
 use argmin::prelude::*;
 use argmin::solver::neldermead::NelderMead;
-use ndarray::{ArrayBase, Data, RawData};
+use ndarray::{ArrayBase, RawData};
 use num_traits::{Float, FloatConst, FromPrimitive};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
@@ -36,9 +36,9 @@ where
     pub stop: ArrayBase<T, D>,
 }
 
-pub struct Weighted<T, W, F, D>
+pub struct Weighted<T, W, D>
 where
-    W: Data<Elem = F>,
+    W: RawData,
 {
     pub time: T,
     pub weight: ArrayBase<W, D>,
@@ -48,9 +48,9 @@ pub struct LeftTruncation<T, D>(ArrayBase<T, D>)
 where
     T: RawData;
 
-impl<T, Distribution, W, F, D> InitialSolvePoint<Distribution> for Weighted<T, W, F, D>
+impl<T, Distribution, W, D> InitialSolvePoint<Distribution> for Weighted<T, W, D>
 where
-    W: Data<Elem = F>,
+    W: RawData,
     T: InitialSolvePoint<Distribution>,
 {
     fn initial_solve_point(&self) -> Distribution {

@@ -127,29 +127,17 @@ where
     }
 }
 
-impl<D, F, T, W> LogLikelihood<D, Array1<F>> for Weighted<T, W, F, Ix1>
-where
-    T: LogLikelihood<D, Array1<F>>,
-    F: Float + ScalarOperand,
-    W: Data<Elem = F>,
-{
-    fn log_likelihood(&self, distribution: &D) -> Array1<F> {
-        let Weighted { time, weight } = self;
-
-        let log_likelihood = time.log_likelihood(distribution);
-        (weight * &log_likelihood) / weight.sum()
-    }
-}
-
-impl<D, F, T, W> LogLikelihood<D, F> for Weighted<T, W, F, Ix1>
+impl<D, F, T, W> LogLikelihood<D, F> for Weighted<T, W, Ix1>
 where
     T: LogLikelihood<D, Array1<F>>,
     F: Float + ScalarOperand,
     W: Data<Elem = F>,
 {
     fn log_likelihood(&self, distribution: &D) -> F {
-        let array: Array1<F> = self.log_likelihood(distribution);
-        array.sum()
+        let Weighted { time, weight } = self;
+
+        let log_likelihood = time.log_likelihood(distribution);
+        (weight * &log_likelihood).sum() / weight.sum()
     }
 }
 
