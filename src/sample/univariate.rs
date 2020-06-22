@@ -6,6 +6,7 @@ use crate::distribution::{CumulativeHazard, LogCumulativeDensity, LogHazard, Sur
 use ndarray::prelude::*;
 use ndarray::{Data, OwnedRepr, ScalarOperand};
 use num_traits::{clamp, Float, FromPrimitive};
+use std::ops::{Neg, Sub};
 
 pub trait FromEvents<F> {
     fn from_events<S: Data<Elem = F>, B: Data<Elem = bool>>(
@@ -110,29 +111,13 @@ impl<F> From<(Vec<F>, Vec<F>)> for IntervalCensored<OwnedRepr<F>, F, Ix1> {
     }
 }
 
-impl<D, F, T> LogLikelihood<D, F> for Uncensored<T, F, Ix1>
+impl<D, O, T, F> LogLikelihood<D, O> for Uncensored<T, F, Ix1>
 where
-    D: LogHazard<ArrayBase<T, Ix1>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
-    F: Float,
+    D: LogHazard<ArrayBase<T, Ix1>, O> + CumulativeHazard<ArrayBase<T, Ix1>, O>,
     T: Data<Elem = F>,
+    O: Sub<Output = O>,
 {
-    fn log_likelihood(&self, distribution: &D) -> F {
-        let Uncensored(time) = self;
-
-        let log_hazard = distribution.log_hazard(time);
-        let cumulative_hazard = distribution.cumulative_hazard(time);
-
-        log_hazard.sum() - cumulative_hazard.sum()
-    }
-}
-
-impl<D, F, T> LogLikelihood<D, Array1<F>> for Uncensored<T, F, Ix1>
-where
-    D: LogHazard<ArrayBase<T, Ix1>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
-    F: Float,
-    T: Data<Elem = F>,
-{
-    fn log_likelihood(&self, distribution: &D) -> Array1<F> {
+    fn log_likelihood(&self, distribution: &D) -> O {
         let Uncensored(time) = self;
 
         let log_hazard = distribution.log_hazard(time);
@@ -170,64 +155,36 @@ where
 
 impl<D, F, T, C> LogLikelihood<D, F> for PartiallyObserved<T, F, Ix1, C>
 where
-    D: LogHazard<ArrayBase<T, Ix1>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
+    D: LogHazard<ArrayBase<T, Ix1>, F> + CumulativeHazard<ArrayBase<T, Ix1>, F>,
     F: Float,
     T: Data<Elem = F>,
     C: LogLikelihood<D, F>,
 {
     fn log_likelihood(&self, distribution: &D) -> F {
         let PartiallyObserved { observed, censored } = self;
-
-        let observed_log_likelihood: F = observed.log_likelihood(distribution);
-        observed_log_likelihood + censored.log_likelihood(distribution)
+        observed.log_likelihood(distribution) + censored.log_likelihood(distribution)
     }
 }
 
-impl<D, F, T> LogLikelihood<D, F> for RightCensored<T, F, Ix1>
+impl<D, O, F, T> LogLikelihood<D, O> for RightCensored<T, F, Ix1>
 where
-    D: LogHazard<ArrayBase<T, Ix1>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
-    F: Float,
+    D: LogHazard<ArrayBase<T, Ix1>, O> + CumulativeHazard<ArrayBase<T, Ix1>, O>,
+    O: Neg<Output = O>,
     T: Data<Elem = F>,
 {
-    fn log_likelihood(&self, distribution: &D) -> F {
-        let RightCensored(time) = self;
-
-        -distribution.cumulative_hazard(&time).sum()
-    }
-}
-
-impl<D, F, T> LogLikelihood<D, Array1<F>> for RightCensored<T, F, Ix1>
-where
-    D: LogHazard<ArrayBase<T, Ix1>, Array1<F>> + CumulativeHazard<ArrayBase<T, Ix1>, Array1<F>>,
-    F: Float,
-    T: Data<Elem = F>,
-{
-    fn log_likelihood(&self, distribution: &D) -> Array1<F> {
+    fn log_likelihood(&self, distribution: &D) -> O {
         let RightCensored(time) = self;
 
         -distribution.cumulative_hazard(&time)
     }
 }
 
-impl<D, F, T> LogLikelihood<D, F> for LeftCensored<T, F, Ix1>
+impl<D, O, F, T> LogLikelihood<D, O> for LeftCensored<T, F, Ix1>
 where
-    D: LogCumulativeDensity<ArrayBase<T, Ix1>, Array1<F>>,
-    F: Float,
+    D: LogCumulativeDensity<ArrayBase<T, Ix1>, O>,
     T: Data<Elem = F>,
 {
-    fn log_likelihood(&self, distribution: &D) -> F {
-        let LeftCensored(time) = self;
-        distribution.log_cumulative_density(&time).sum()
-    }
-}
-
-impl<D, F, T> LogLikelihood<D, Array1<F>> for LeftCensored<T, F, Ix1>
-where
-    D: LogCumulativeDensity<ArrayBase<T, Ix1>, Array1<F>>,
-    F: Float,
-    T: Data<Elem = F>,
-{
-    fn log_likelihood(&self, distribution: &D) -> Array1<F> {
+    fn log_likelihood(&self, distribution: &D) -> O {
         let LeftCensored(time) = self;
         distribution.log_cumulative_density(&time)
     }
@@ -240,16 +197,8 @@ where
     T: Data<Elem = F>,
 {
     fn log_likelihood(&self, distribution: &D) -> F {
-        let IntervalCensored { start, stop } = self;
-
-        let min = F::from_f64(-1e50).unwrap();
-        let max = F::from_f64(1e50).unwrap();
-
-        let survival = (distribution.survival(&start) - distribution.survival(&stop))
-            .mapv_into(F::ln)
-            .mapv_into(|x| clamp(x, min, max));
-
-        survival.sum()
+        let array: Array1<F> = self.log_likelihood(distribution);
+        array.sum()
     }
 }
 

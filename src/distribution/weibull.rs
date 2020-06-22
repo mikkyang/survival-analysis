@@ -47,6 +47,20 @@ where
     }
 }
 
+impl<S, D, F> LogHazard<ArrayBase<S, D>, F> for WeibullDistribution<F>
+where
+    S: Data<Elem = F>,
+    D: Dimension,
+    F: Float + FromPrimitive + ScalarOperand,
+{
+    fn log_hazard(&self, input: &ArrayBase<S, D>) -> F {
+        let WeibullDistribution { rho, lambda } = *self;
+
+        let n = F::from_usize(input.len()).unwrap();
+        n * (rho.ln() - (rho * lambda.ln())) + (rho - F::one()) * input.mapv(F::ln).sum()
+    }
+}
+
 impl<S, D, F> CumulativeHazard<ArrayBase<S, D>, Array<F, D>> for WeibullDistribution<F>
 where
     S: Data<Elem = F>,
@@ -61,6 +75,18 @@ where
     }
 }
 
+impl<S, D, F> CumulativeHazard<ArrayBase<S, D>, F> for WeibullDistribution<F>
+where
+    S: Data<Elem = F>,
+    D: Dimension,
+    F: Float + SafeLogExp + ScalarOperand,
+{
+    fn cumulative_hazard(&self, input: &ArrayBase<S, D>) -> F {
+        let array: Array<F, D> = self.cumulative_hazard(input);
+        array.sum()
+    }
+}
+
 impl<S, D, F> Survival<ArrayBase<S, D>, Array<F, D>> for WeibullDistribution<F>
 where
     S: Data<Elem = F>,
@@ -68,7 +94,20 @@ where
     F: Float + SafeLogExp + ScalarOperand + Neg,
 {
     fn survival(&self, input: &ArrayBase<S, D>) -> Array<F, D> {
-        self.cumulative_hazard(input).mapv_into(|x| (-x).exp())
+        let array: Array<F, D> = self.cumulative_hazard(input);
+        array.mapv_into(|x| (-x).exp())
+    }
+}
+
+impl<S, D, F> Survival<ArrayBase<S, D>, F> for WeibullDistribution<F>
+where
+    S: Data<Elem = F>,
+    D: Dimension,
+    F: Float + SafeLogExp + ScalarOperand + Neg,
+{
+    fn survival(&self, input: &ArrayBase<S, D>) -> F {
+        let array: Array<F, D> = self.survival(input);
+        array.sum()
     }
 }
 
@@ -79,7 +118,20 @@ where
     F: Float + SafeLogExp + ScalarOperand + Neg + Sub<Array<F, D>, Output = Array<F, D>>,
 {
     fn log_cumulative_density(&self, input: &ArrayBase<S, D>) -> Array<F, D> {
-        (F::one() - self.survival(input)).mapv_into(F::ln)
+        let array: Array<F, D> = self.survival(input);
+        (F::one() - array).mapv_into(F::ln)
+    }
+}
+
+impl<S, D, F> LogCumulativeDensity<ArrayBase<S, D>, F> for WeibullDistribution<F>
+where
+    S: Data<Elem = F>,
+    D: Dimension,
+    F: Float + SafeLogExp + ScalarOperand + Neg + Sub<Array<F, D>, Output = Array<F, D>>,
+{
+    fn log_cumulative_density(&self, input: &ArrayBase<S, D>) -> F {
+        let array: Array<F, D> = self.log_cumulative_density(input);
+        array.sum()
     }
 }
 
