@@ -70,8 +70,8 @@ where
     fn cumulative_hazard(&self, input: &ArrayBase<S, D>) -> Array<F, D> {
         let WeibullDistribution { rho, lambda } = *self;
 
-        let log = (input.mapv(SafeLogExp::safe_ln) - lambda.ln()) * rho;
-        log.mapv_into(SafeLogExp::safe_exp)
+        let log_cumulative_hazard = (input.mapv(SafeLogExp::safe_ln) - lambda.ln()) * rho;
+        log_cumulative_hazard.mapv_into(SafeLogExp::safe_exp)
     }
 }
 
@@ -82,8 +82,7 @@ where
     F: Float + SafeLogExp + ScalarOperand,
 {
     fn cumulative_hazard(&self, input: &ArrayBase<S, D>) -> F {
-        let array: Array<F, D> = self.cumulative_hazard(input);
-        array.sum()
+        CumulativeHazard::<_, Array<F, D>>::cumulative_hazard(self, input).sum()
     }
 }
 
@@ -94,8 +93,8 @@ where
     F: Float + SafeLogExp + ScalarOperand + Neg,
 {
     fn survival(&self, input: &ArrayBase<S, D>) -> Array<F, D> {
-        let array: Array<F, D> = self.cumulative_hazard(input);
-        array.mapv_into(|x| (-x).exp())
+        let cumulative_hazard: Array<F, D> = self.cumulative_hazard(input);
+        cumulative_hazard.mapv_into(|x| (-x).exp())
     }
 }
 
@@ -106,8 +105,7 @@ where
     F: Float + SafeLogExp + ScalarOperand + Neg,
 {
     fn survival(&self, input: &ArrayBase<S, D>) -> F {
-        let array: Array<F, D> = self.survival(input);
-        array.sum()
+        Survival::<_, Array<F, D>>::survival(self, input).sum()
     }
 }
 
