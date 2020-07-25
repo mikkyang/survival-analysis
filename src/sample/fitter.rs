@@ -1,4 +1,5 @@
 use super::{LogLikelihood, Weighted};
+use crate::error::Error;
 use crate::error::Error::*;
 use argmin::prelude::*;
 use argmin::solver::neldermead::NelderMead;
@@ -27,14 +28,14 @@ where
 }
 
 pub trait InitialNelderMeanSimplex<T> {
-    fn initial_simplex(&self) -> Result<Vec<T>, crate::error::Error>;
+    fn initial_simplex(&self) -> Result<Vec<T>, Error>;
 }
 
 impl<F> InitialNelderMeanSimplex<Vec<F>> for [F]
 where
     F: Float + FromPrimitive,
 {
-    fn initial_simplex(&self) -> Result<Vec<Vec<F>>, crate::error::Error> {
+    fn initial_simplex(&self) -> Result<Vec<Vec<F>>, Error> {
         let initial_point: Vec<F> = self.into();
 
         let d = initial_point.len();
@@ -77,7 +78,7 @@ impl<S, D, F> BaseFitter<S, D, F> {
 impl<'f, S, D, F> ArgminOp for &'f BaseFitter<S, D, F>
 where
     S: LogLikelihood<D, F>,
-    D: for<'a> TryFrom<&'a [F], Error = crate::error::Error>,
+    D: for<'a> TryFrom<&'a [F], Error = Error>,
     F: Float + FloatConst + FromPrimitive + Debug + Display + Serialize + for<'de> Deserialize<'de>,
 {
     type Param = Vec<F>;
@@ -93,15 +94,15 @@ where
 }
 
 pub trait Fitter<S, P> {
-    fn fit(&self) -> Result<P, crate::error::Error>;
+    fn fit(&self) -> Result<P, Error>;
 }
 
 impl<S, D> Fitter<S, D> for BaseFitter<S, D, f64>
 where
     S: LogLikelihood<D, f64> + InitialSolvePoint<D>,
-    D: for<'a> TryFrom<&'a [f64], Error = crate::error::Error> + Into<Vec<f64>> + Debug,
+    D: for<'a> TryFrom<&'a [f64], Error = Error> + Into<Vec<f64>> + Debug,
 {
-    fn fit(&self) -> Result<D, crate::error::Error> {
+    fn fit(&self) -> Result<D, Error> {
         let initial_point: Vec<f64> = self.input_state.initial_solve_point().into();
         let initial_simplex = initial_point.initial_simplex()?;
 
