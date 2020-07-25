@@ -4,6 +4,7 @@ use argmin::solver::neldermead::NelderMead;
 use ndarray::RawData;
 use num_traits::{Float, FloatConst, FromPrimitive};
 use serde::{Deserialize, Serialize};
+use std::convert::TryFrom;
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 
@@ -59,7 +60,7 @@ pub struct BaseFitter<S, D, F> {
 impl<'f, S, D, F> ArgminOp for &'f BaseFitter<S, D, F>
 where
     S: LogLikelihood<D, F>,
-    D: for<'a> From<&'a [F]>,
+    D: for<'a> TryFrom<&'a [F], Error = crate::error::Error>,
     F: Float + FloatConst + FromPrimitive + Debug + Display + Serialize + for<'de> Deserialize<'de>,
 {
     type Param = Vec<F>;
@@ -68,22 +69,22 @@ where
     type Jacobian = ();
     type Float = F;
 
-    fn apply(&self, params: &Self::Param) -> Result<Self::Output, Error> {
-        let distribution = D::from(params);
+    fn apply(&self, params: &Self::Param) -> Result<Self::Output, anyhow::Error> {
+        let distribution = D::try_from(params)?;
         Ok(-self.input_state.log_likelihood(&distribution))
     }
 }
 
 pub trait Fitter<S, P> {
-    fn fit(&self) -> Result<P, String>;
+    fn fit(&self) -> Result<P, crate::error::Error>;
 }
 
 impl<S, D> Fitter<S, D> for BaseFitter<S, D, f64>
 where
     S: LogLikelihood<D, f64> + InitialSolvePoint<D>,
-    D: for<'a> From<&'a [f64]> + Into<Vec<f64>> + Debug,
+    D: for<'a> TryFrom<&'a [f64], Error = crate::error::Error> + Into<Vec<f64>> + Debug,
 {
-    fn fit(&self) -> Result<D, String> {
+    fn fit(&self) -> Result<D, crate::error::Error> {
         let initial_point: Vec<f64> = self.input_state.initial_solve_point().into();
 
         let solver = NelderMead::new().with_initial_params(initial_point.initial_simplex());
@@ -94,7 +95,7 @@ where
             .run()
             .unwrap();
 
-        Ok(D::from(&res.state.best_param))
+        D::try_from(&res.state.best_param)
     }
 }
 
