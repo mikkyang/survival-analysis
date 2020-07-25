@@ -8,6 +8,8 @@ use ndarray::{Data, OwnedRepr, RawData, ScalarOperand};
 use num_traits::{clamp, Float, FromPrimitive};
 use std::ops::{Add, Neg, Sub};
 
+/// A convenience method to convert a list of events and their observed status
+/// into a set of partially observed events.
 pub trait FromEvents<'a, F: 'a> {
     fn from_events(
         events: impl IntoIterator<Item = &'a F>,
