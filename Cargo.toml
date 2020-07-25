@@ -2,6 +2,13 @@
 name = "survival_analysis"
 version = "0.1.0"
 authors = ["Michael Yang <mikkyangg@gmail.com>"]
+description = "Survival analysis library"
+documentation = "https://docs.rs/survival-analysis"
+homepage = "http://github.com/mikkyang/survival-analysis"
+repository = "http://github.com/mikkyang/survival-analysis"
+readme = "README.md"
+keywords = ["survival", "analysis", "survival analysis", "weibull"]
+license = "MIT"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
