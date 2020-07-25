@@ -5,7 +5,7 @@ A *experimental* survival analysis library, initially inspired by Python's [life
 Current Limitations:
 
 * Only supports fitting to a Weibull distribution
-* Only supports distributions that can be fitted with Nelder-Mean
+* Only supports distributions that can be fitted without derivatives
 * No autodifferentiation support
 
 ## Fitting Data
