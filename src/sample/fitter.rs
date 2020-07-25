@@ -97,24 +97,31 @@ pub trait Fitter<S, P> {
     fn fit(&self) -> Result<P, Error>;
 }
 
-impl<S, D> Fitter<S, D> for BaseFitter<S, D, f64>
-where
-    S: LogLikelihood<D, f64> + InitialSolvePoint<D>,
-    D: for<'a> TryFrom<&'a [f64], Error = Error> + Into<Vec<f64>> + Debug,
-{
-    fn fit(&self) -> Result<D, Error> {
-        let initial_point: Vec<f64> = self.input_state.initial_solve_point().into();
-        let initial_simplex = initial_point.initial_simplex()?;
+macro_rules! impl_fit {
+    ($ty: ty) => {
+        impl<S, D> Fitter<S, D> for BaseFitter<S, D, $ty>
+        where
+            S: LogLikelihood<D, $ty> + InitialSolvePoint<D>,
+            D: for<'a> TryFrom<&'a [$ty], Error = Error> + Into<Vec<$ty>> + Debug,
+        {
+            fn fit(&self) -> Result<D, Error> {
+                let initial_point: Vec<$ty> = self.input_state.initial_solve_point().into();
+                let initial_simplex = initial_point.initial_simplex()?;
 
-        let solver = NelderMead::new().with_initial_params(initial_simplex);
+                let solver = NelderMead::new().with_initial_params(initial_simplex);
 
-        let res = Executor::new(self, solver, initial_point.clone())
-            .max_iters(self.max_iterations)
-            .run()?;
+                let res = Executor::new(self, solver, initial_point.clone())
+                    .max_iters(self.max_iterations)
+                    .run()?;
 
-        D::try_from(&res.state.best_param)
-    }
+                D::try_from(&res.state.best_param)
+            }
+        }
+    };
 }
+
+impl_fit!(f32);
+impl_fit!(f64);
 
 #[cfg(test)]
 mod tests {
