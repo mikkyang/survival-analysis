@@ -12,5 +12,6 @@ mod tests {
 }
 
 pub mod distribution;
+pub mod error;
 pub mod sample;
 mod utils;

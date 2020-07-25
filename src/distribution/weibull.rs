@@ -1,9 +1,11 @@
 use super::{CumulativeHazard, LogCumulativeDensity, LogHazard, Survival};
+use crate::error::Error;
 use crate::sample::fitter::InitialSolvePoint;
 use crate::sample::{IntervalCensored, LeftCensored, RightCensored};
 use crate::utils::SafeLogExp;
 use ndarray::{Array, ArrayBase, Data, Dimension, Ix1, ScalarOperand};
 use num_traits::{Float, FromPrimitive};
+use std::convert::TryFrom;
 use std::ops::{Neg, Sub};
 
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
@@ -18,15 +20,24 @@ impl<F> From<WeibullDistribution<F>> for Vec<F> {
     }
 }
 
-impl<'a, F> From<&'a [F]> for WeibullDistribution<F>
+impl<'a, F> TryFrom<&'a [F]> for WeibullDistribution<F>
 where
     F: Copy,
 {
-    fn from(array: &'a [F]) -> Self {
-        WeibullDistribution {
+    type Error = Error;
+
+    fn try_from(array: &'a [F]) -> Result<Self, Self::Error> {
+        if array.len() != 2 {
+            return Err(Error::IncompatibleDistributionParameterCount(
+                array.len(),
+                2,
+            ));
+        }
+
+        Ok(WeibullDistribution {
             lambda: array[0],
             rho: array[1],
-        }
+        })
     }
 }
 
