@@ -10,13 +10,13 @@ use std::ops::{Neg, Sub};
 
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
 pub struct WeibullDistribution<F> {
-    pub rho: F,
-    pub lambda: F,
+    pub shape: F,
+    pub scale: F,
 }
 
 impl<F> From<WeibullDistribution<F>> for Vec<F> {
     fn from(distribution: WeibullDistribution<F>) -> Self {
-        vec![distribution.lambda, distribution.rho]
+        vec![distribution.scale, distribution.shape]
     }
 }
 
@@ -35,8 +35,8 @@ where
         }
 
         Ok(WeibullDistribution {
-            lambda: array[0],
-            rho: array[1],
+            scale: array[0],
+            shape: array[1],
         })
     }
 }
@@ -48,7 +48,8 @@ where
     F: Float + ScalarOperand,
 {
     fn log_hazard(&self, input: &ArrayBase<S, D>) -> Array<F, D> {
-        let WeibullDistribution { rho, lambda } = *self;
+        let rho = self.shape;
+        let lambda = self.scale;
 
         // calculate scalars first to avoid applying to entire array
         let scalar: F = rho.ln() - (rho * lambda.ln());
@@ -65,7 +66,8 @@ where
     F: Float + FromPrimitive + ScalarOperand,
 {
     fn log_hazard(&self, input: &ArrayBase<S, D>) -> F {
-        let WeibullDistribution { rho, lambda } = *self;
+        let rho = self.shape;
+        let lambda = self.scale;
 
         let n = F::from_usize(input.len()).unwrap();
         n * (rho.ln() - (rho * lambda.ln())) + (rho - F::one()) * input.mapv(F::ln).sum()
@@ -79,7 +81,8 @@ where
     F: Float + SafeLogExp + ScalarOperand,
 {
     fn cumulative_hazard(&self, input: &ArrayBase<S, D>) -> Array<F, D> {
-        let WeibullDistribution { rho, lambda } = *self;
+        let rho = self.shape;
+        let lambda = self.scale;
 
         let log_cumulative_hazard = (input.mapv(SafeLogExp::safe_ln) - lambda.ln()) * rho;
         log_cumulative_hazard.mapv_into(SafeLogExp::safe_exp)
@@ -152,8 +155,8 @@ where
     fn initial_solve_point(&self) -> WeibullDistribution<F> {
         let lambda = self.0.mean().unwrap_or_else(F::zero);
         WeibullDistribution {
-            rho: F::one(),
-            lambda,
+            shape: F::one(),
+            scale: lambda,
         }
     }
 }
@@ -166,8 +169,8 @@ where
     fn initial_solve_point(&self) -> WeibullDistribution<F> {
         let lambda = self.0.mean().unwrap_or_else(F::zero);
         WeibullDistribution {
-            rho: F::one(),
-            lambda,
+            shape: F::one(),
+            scale: lambda,
         }
     }
 }
@@ -180,8 +183,8 @@ where
     fn initial_solve_point(&self) -> WeibullDistribution<F> {
         let lambda = self.start.mean().unwrap_or_else(F::zero);
         WeibullDistribution {
-            rho: F::one(),
-            lambda,
+            shape: F::one(),
+            scale: lambda,
         }
     }
 }
@@ -199,8 +202,8 @@ mod tests {
     #[test]
     fn log_hazard_f32() {
         let distribution = WeibullDistribution {
-            rho: 0.5f32,
-            lambda: 1.,
+            shape: 0.5f32,
+            scale: 1.,
         };
 
         let actual = distribution.log_hazard(&array![1., 2., 3., 4.]);
@@ -211,8 +214,8 @@ mod tests {
     #[test]
     fn log_hazard_f64() {
         let distribution = WeibullDistribution {
-            rho: 1.5f64,
-            lambda: 2.,
+            shape: 1.5f64,
+            scale: 2.,
         };
 
         let actual = distribution.log_hazard(&array![5., 6., 7., 8.]);
@@ -223,8 +226,8 @@ mod tests {
     #[test]
     fn cumulative_hazard() {
         let distribution = WeibullDistribution {
-            rho: 2.0f64,
-            lambda: 1.4,
+            shape: 2.0f64,
+            scale: 1.4,
         };
 
         let actual = distribution.cumulative_hazard(&array![[5., 6.], [7., 8.]]);
@@ -235,8 +238,8 @@ mod tests {
     #[test]
     fn log_likelihood_right() {
         let distribution = WeibullDistribution {
-            rho: 1.3,
-            lambda: 2.3,
+            shape: 1.3,
+            scale: 2.3,
         };
 
         let durations = array![1., 2., 3., 4.];
@@ -253,8 +256,8 @@ mod tests {
     #[test]
     fn log_likelihood_left() {
         let distribution = WeibullDistribution {
-            rho: 0.7,
-            lambda: 0.5,
+            shape: 0.7,
+            scale: 0.5,
         };
 
         let events: PartiallyObserved<_, _, LeftCensored<_, _>> = PartiallyObserved::from_events(
@@ -271,8 +274,8 @@ mod tests {
     #[test]
     fn log_likelihood_interval() {
         let distribution = WeibullDistribution {
-            rho: 1.7,
-            lambda: 0.5,
+            shape: 1.7,
+            scale: 0.5,
         };
 
         let events: PartiallyObserved<_, _, IntervalCensored<_, _>> =
@@ -290,8 +293,8 @@ mod tests {
     #[test]
     fn log_likelihood_interval_weights() {
         let distribution = WeibullDistribution {
-            rho: 1.0170410407859767f64,
-            lambda: 2.0410538960706726,
+            shape: 1.0170410407859767f64,
+            scale: 2.0410538960706726,
         };
 
         let events = Weighted {

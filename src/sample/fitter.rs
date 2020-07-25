@@ -142,11 +142,11 @@ mod tests {
 
         let actual = fitter.fit(&Default::default()).unwrap();
         let expected = WeibullDistribution {
-            lambda: 2.0410538960706726,
-            rho: 1.0170410407859767,
+            scale: 2.0410538960706726,
+            shape: 1.0170410407859767,
         };
 
-        assert!((actual.lambda - expected.lambda).abs() < TOLERANCE);
-        assert!((actual.rho - expected.rho).abs() < TOLERANCE);
+        assert!((actual.scale - expected.scale).abs() < TOLERANCE);
+        assert!((actual.shape - expected.shape).abs() < TOLERANCE);
     }
 }
