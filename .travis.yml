@@ -7,3 +7,10 @@ jobs:
   allow_failures:
     - rust: nightly
   fast_finish: true
+matrix:
+  include:
+    - language: rust
+      rust: stable
+      name: "check wasm32 support"
+      install: rustup target add wasm32-unknown-unknown
+      script: cargo check --target wasm32-unknown-unknown
