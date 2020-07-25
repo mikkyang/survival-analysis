@@ -92,8 +92,7 @@ where
         let res = Executor::new(self, solver, initial_point.clone())
             .add_observer(ArgminSlogLogger::term(), ObserverMode::Always)
             .max_iters(100)
-            .run()
-            .unwrap();
+            .run()?;
 
         D::try_from(&res.state.best_param)
     }
