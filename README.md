@@ -1,4 +1,11 @@
-# Survival Analysis
+# Survival Analysis [![Build Status]][travis] [![Latest Version]][crates.io] [![Documentation]][docs.rs]
+
+[Build Status]: https://api.travis-ci.org/mikkyang/survival-analysis.svg?branch=master
+[travis]: https://travis-ci.org/mikkyang/survival-analysis
+[Latest Version]: https://img.shields.io/crates/v/survival-analysis.svg
+[crates.io]: https://crates.io/crates/survival-analysis
+[Documentation]: https://img.shields.io/badge/rust-documentation-blue.svg
+[docs.rs]: https://docs.rs/survival-analysis
 
 A *experimental* survival analysis library, initially inspired by Python's [lifelines](https://github.com/CamDavidsonPilon/lifelines).
 
