@@ -7,7 +7,7 @@ documentation = "https://docs.rs/survival-analysis"
 homepage = "http://github.com/mikkyang/survival-analysis"
 repository = "http://github.com/mikkyang/survival-analysis"
 readme = "README.md"
-keywords = ["survival", "analysis", "survival analysis", "weibull"]
+keywords = ["survival", "analysis", "weibull"]
 license = "MIT"
 edition = "2018"
 
