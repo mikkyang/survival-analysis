@@ -80,8 +80,20 @@ where
     }
 }
 
+pub struct FitterParameters {
+    max_iterations: u64,
+}
+
+impl Default for FitterParameters {
+    fn default() -> Self {
+        FitterParameters {
+            max_iterations: 100,
+        }
+    }
+}
+
 pub trait Fitter<S, P> {
-    fn fit(&self) -> Result<P, crate::error::Error>;
+    fn fit(&self, parameters: &FitterParameters) -> Result<P, crate::error::Error>;
 }
 
 impl<S, D> Fitter<S, D> for BaseFitter<S, D, f64>
@@ -89,14 +101,14 @@ where
     S: LogLikelihood<D, f64> + InitialSolvePoint<D>,
     D: for<'a> TryFrom<&'a [f64], Error = crate::error::Error> + Into<Vec<f64>> + Debug,
 {
-    fn fit(&self) -> Result<D, crate::error::Error> {
+    fn fit(&self, parameters: &FitterParameters) -> Result<D, crate::error::Error> {
         let initial_point: Vec<f64> = self.input_state.initial_solve_point().into();
         let initial_simplex = initial_point.initial_simplex()?;
 
         let solver = NelderMead::new().with_initial_params(initial_simplex);
 
         let res = Executor::new(self, solver, initial_point.clone())
-            .max_iters(100)
+            .max_iters(parameters.max_iterations)
             .run()?;
 
         D::try_from(&res.state.best_param)
@@ -128,7 +140,7 @@ mod tests {
             _float: PhantomData,
         };
 
-        let actual = fitter.fit().unwrap();
+        let actual = fitter.fit(&Default::default()).unwrap();
         let expected = WeibullDistribution {
             lambda: 2.0410538960706726,
             rho: 1.0170410407859767,
