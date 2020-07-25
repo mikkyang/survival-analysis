@@ -7,7 +7,6 @@ jobs:
   allow_failures:
     - rust: nightly
   fast_finish: true
-matrix:
   include:
     - language: rust
       rust: stable
