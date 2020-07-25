@@ -96,7 +96,6 @@ where
         let solver = NelderMead::new().with_initial_params(initial_simplex);
 
         let res = Executor::new(self, solver, initial_point.clone())
-            .add_observer(ArgminSlogLogger::term(), ObserverMode::Always)
             .max_iters(100)
             .run()?;
 
