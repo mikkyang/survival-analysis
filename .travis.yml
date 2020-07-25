@@ -7,3 +7,9 @@ jobs:
   allow_failures:
     - rust: nightly
   fast_finish: true
+  include:
+    - language: rust
+      rust: stable
+      name: "wasm32"
+      install: rustup target add wasm32-unknown-unknown
+      script: cargo check --target wasm32-unknown-unknown
