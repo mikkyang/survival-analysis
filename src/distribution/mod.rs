@@ -1,3 +1,5 @@
+pub use weibull::WeibullDistribution;
+
 pub mod weibull;
 
 pub trait Survival<Input, Output> {
