@@ -142,7 +142,7 @@ mod tests {
             weight: array![1000. - 376., 376. - 82., 82. - 7., 7.],
         };
 
-        let fitter: BaseFitter<_, WeibullDistribution<f64>, f64> = BaseFitter::new(data);
+        let fitter: BaseFitter<_, WeibullDistribution<_>, _> = BaseFitter::new(data);
 
         let actual = fitter.fit().unwrap();
         let expected = WeibullDistribution {
