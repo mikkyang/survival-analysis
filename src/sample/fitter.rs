@@ -58,8 +58,20 @@ where
 
 pub struct BaseFitter<S, D, F> {
     input_state: S,
-    _distribution: PhantomData<D>,
-    _float: PhantomData<F>,
+    distribution: PhantomData<D>,
+    float: PhantomData<F>,
+    pub max_iterations: u64,
+}
+
+impl<S, D, F> BaseFitter<S, D, F> {
+    pub fn new(data: S) -> Self {
+        BaseFitter {
+            input_state: data,
+            distribution: PhantomData,
+            float: PhantomData,
+            max_iterations: 100,
+        }
+    }
 }
 
 impl<'f, S, D, F> ArgminOp for &'f BaseFitter<S, D, F>
@@ -80,20 +92,8 @@ where
     }
 }
 
-pub struct FitterParameters {
-    max_iterations: u64,
-}
-
-impl Default for FitterParameters {
-    fn default() -> Self {
-        FitterParameters {
-            max_iterations: 100,
-        }
-    }
-}
-
 pub trait Fitter<S, P> {
-    fn fit(&self, parameters: &FitterParameters) -> Result<P, crate::error::Error>;
+    fn fit(&self) -> Result<P, crate::error::Error>;
 }
 
 impl<S, D> Fitter<S, D> for BaseFitter<S, D, f64>
@@ -101,14 +101,14 @@ where
     S: LogLikelihood<D, f64> + InitialSolvePoint<D>,
     D: for<'a> TryFrom<&'a [f64], Error = crate::error::Error> + Into<Vec<f64>> + Debug,
 {
-    fn fit(&self, parameters: &FitterParameters) -> Result<D, crate::error::Error> {
+    fn fit(&self) -> Result<D, crate::error::Error> {
         let initial_point: Vec<f64> = self.input_state.initial_solve_point().into();
         let initial_simplex = initial_point.initial_simplex()?;
 
         let solver = NelderMead::new().with_initial_params(initial_simplex);
 
         let res = Executor::new(self, solver, initial_point.clone())
-            .max_iters(parameters.max_iterations)
+            .max_iters(self.max_iterations)
             .run()?;
 
         D::try_from(&res.state.best_param)
@@ -126,7 +126,7 @@ mod tests {
 
     #[test]
     fn test_fit() {
-        let input_state = Weighted {
+        let data = Weighted {
             time: IntervalCensored {
                 start: array![0., 2., 5., 10.],
                 stop: array![2., 5., 10., 1e10f64],
@@ -134,13 +134,9 @@ mod tests {
             weight: array![1000. - 376., 376. - 82., 82. - 7., 7.],
         };
 
-        let fitter: BaseFitter<_, WeibullDistribution<f64>, f64> = BaseFitter {
-            input_state,
-            _distribution: PhantomData,
-            _float: PhantomData,
-        };
+        let fitter: BaseFitter<_, WeibullDistribution<f64>, f64> = BaseFitter::new(data);
 
-        let actual = fitter.fit(&Default::default()).unwrap();
+        let actual = fitter.fit().unwrap();
         let expected = WeibullDistribution {
             scale: 2.0410538960706726,
             shape: 1.0170410407859767,
