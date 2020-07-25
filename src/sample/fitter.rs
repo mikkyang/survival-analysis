@@ -1,4 +1,5 @@
 use super::{LogLikelihood, Weighted};
+use crate::error::Error::*;
 use argmin::prelude::*;
 use argmin::solver::neldermead::NelderMead;
 use ndarray::RawData;
@@ -26,28 +27,32 @@ where
 }
 
 pub trait InitialNelderMeanSimplex<T> {
-    fn initial_simplex(&self) -> Vec<T>;
+    fn initial_simplex(&self) -> Result<Vec<T>, crate::error::Error>;
 }
 
 impl<F> InitialNelderMeanSimplex<Vec<F>> for [F]
 where
     F: Float + FromPrimitive,
 {
-    fn initial_simplex(&self) -> Vec<Vec<F>> {
+    fn initial_simplex(&self) -> Result<Vec<Vec<F>>, crate::error::Error> {
         let initial_point: Vec<F> = self.into();
 
         let d = initial_point.len();
         let mut simplex = vec![initial_point; d + 1];
         for (index_within_point, point) in simplex.iter_mut().skip(1).enumerate() {
             if point[index_within_point] != F::zero() {
-                point[index_within_point] =
-                    F::from(1.0 + NON_ZERO_DELTA).unwrap() * point[index_within_point]
+                let delta_multiple = 1.0 + NON_ZERO_DELTA;
+
+                point[index_within_point] = F::from(delta_multiple)
+                    .ok_or(NumericalConversion(delta_multiple))?
+                    * point[index_within_point]
             } else {
-                point[index_within_point] = F::from(ZERO_DELTA).unwrap()
+                point[index_within_point] =
+                    F::from(ZERO_DELTA).ok_or(NumericalConversion(ZERO_DELTA))?
             }
         }
 
-        simplex
+        Ok(simplex)
     }
 }
 
@@ -86,8 +91,9 @@ where
 {
     fn fit(&self) -> Result<D, crate::error::Error> {
         let initial_point: Vec<f64> = self.input_state.initial_solve_point().into();
+        let initial_simplex = initial_point.initial_simplex()?;
 
-        let solver = NelderMead::new().with_initial_params(initial_point.initial_simplex());
+        let solver = NelderMead::new().with_initial_params(initial_simplex);
 
         let res = Executor::new(self, solver, initial_point.clone())
             .add_observer(ArgminSlogLogger::term(), ObserverMode::Always)

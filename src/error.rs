@@ -6,6 +6,7 @@ pub enum Error {
     /// This error occurs when converting between vectors and distribution types
     /// Can probably be removed with constant generics https://github.com/rust-lang/rust/issues/44580
     IncompatibleDistributionParameterCount(usize, usize),
+    NumericalConversion(f64),
     Anyhow(anyhow::Error),
 }
 
@@ -15,6 +16,8 @@ impl fmt::Display for Error {
             Anyhow(e) => e.fmt(f),
             IncompatibleDistributionParameterCount(vec, dist) =>
                 write!(f, "Error converting between vector of {} elements and distribution with {} parameters", vec, dist),
+            NumericalConversion(value) =>
+                write!(f, "Unable to convert {} into desired type", value),
         }
     }
 }
